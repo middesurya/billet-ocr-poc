@@ -1,0 +1,48 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+credentials.json
+
+# Data (large images / model outputs)
+data/raw/
+data/debug/
+data/synthetic/
+
+# Model cache
+*.onnx
+*.pdmodel
+*.pdparams
+*.pdiparams
+
+# Claude Code
+.claude/
+
+# Pytest
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
