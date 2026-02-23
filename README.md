@@ -55,11 +55,19 @@ Evaluated on 5 images graded easy to extreme difficulty:
 
 | Method | Avg Char Accuracy | Avg Word Accuracy | Avg Time |
 |--------|:-:|:-:|:-:|
-| VLM Raw (Claude) | 66.7% | 20.0% | 3475ms |
-| VLM Center Crop | 63.3% | 20.0% | 3654ms |
-| VLM Preprocessed | 56.7% | 20.0% | 2852ms |
-| Florence-2 Crop | 53.8% | 20.0% | 126ms |
-| Florence-2 Raw | 31.4% | 0.0% | 2766ms |
+| VLM Raw (Claude) | 66.7% | 20.0% | 3655ms |
+| VLM Center Crop | 63.3% | 20.0% | 2862ms |
+| VLM Preprocessed | 56.7% | 20.0% | 2671ms |
+| VLM Fallback | 56.7% | 20.0% | 3279ms |
+| Florence-2 Crop | 53.8% | 20.0% | 122ms |
+| Florence-2 Raw | 31.4% | 0.0% | 3648ms |
+| PaddleOCR Raw | 3.3% | 0.0% | 19443ms |
+| CLAHE + Correction | 2.0% | 0.0% | - |
+| PaddleOCR + CLAHE | 0.0% | 0.0% | 15522ms |
+| ROI + CLAHE | 0.0% | 0.0% | 5524ms |
+| Ensemble | 0.0% | 0.0% | 6929ms |
+
+> **Note:** PaddleOCR's default PP-OCRv5 models are trained on clean document text, not industrial dot-matrix stamps. Fine-tuning on billet-specific data would be needed for production use. VLM Raw (unprocessed photos sent to Claude) currently gives the best accuracy.
 
 Full reports in [`docs/`](docs/).
 
