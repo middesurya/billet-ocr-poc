@@ -111,7 +111,28 @@ def encode_image_to_base64(
         ".bmp": "image/bmp",
     }
     media_type = _EXT_TO_MIME.get(suffix, "image/jpeg")
-    b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
+    raw_bytes = path.read_bytes()
+
+    # Anthropic API has a 5 MB base64 limit.  Large PNGs/BMPs easily exceed
+    # this, so fall back to JPEG compression when the payload is too big.
+    _MAX_BASE64_BYTES = 5_000_000  # ~3.75 MB raw → ~5 MB base64
+    if len(raw_bytes) > _MAX_BASE64_BYTES:
+        logger.debug(
+            f"[VLM] File {path.name} is {len(raw_bytes)} bytes — "
+            f"re-encoding as JPEG to stay under 5 MB API limit"
+        )
+        img_array = cv2.imread(str(path))
+        if img_array is None:
+            raise ValueError(f"cv2.imread failed for {path}")
+        success, buffer = cv2.imencode(
+            ".jpg", img_array, [cv2.IMWRITE_JPEG_QUALITY, 95]
+        )
+        if not success:
+            raise ValueError(f"cv2.imencode failed for {path}")
+        b64 = base64.b64encode(buffer.tobytes()).decode("utf-8")
+        return b64, "image/jpeg"
+
+    b64 = base64.b64encode(raw_bytes).decode("utf-8")
     return b64, media_type
 
 
