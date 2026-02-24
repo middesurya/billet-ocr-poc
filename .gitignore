@@ -27,10 +27,10 @@ Thumbs.db
 .env.*
 credentials.json
 
-# Data (large images / model outputs)
-data/raw/
-data/raw_original/
+# Data (re-downloadable via scripts/download_roboflow_dataset.py)
 data/roboflow_download/
+
+# Other data dirs
 data/debug/
 data/synthetic/
 
