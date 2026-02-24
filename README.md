@@ -1,19 +1,20 @@
 # Billet OCR POC
 
-A proof-of-concept system for reading dot-matrix stamped identification codes from steel billet end-face photos. Billets are stamped with heat numbers, strand IDs, and sequence numbers via pin-marking machines -- this project automates reading those codes under challenging industrial conditions.
+A proof-of-concept system for reading stamped/painted identification codes from steel billet end-face photos. Billets are marked with heat numbers and sequence IDs — this project automates reading those codes under challenging industrial conditions using OCR and Vision Language Models (VLMs).
 
 ## The Problem
 
 Steel billet stamps are hard to read because of:
 
-- Low-contrast dot-matrix impressions on oxidized/scaled steel surfaces
+- Low-contrast dot-matrix impressions or faded paint on oxidized/scaled steel
 - Variable lighting (indoor warehouse, outdoor yard, shadows)
-- Yellow paint markings adding visual noise
-- Partial obscuring from wear, scale buildup, or camera angle
+- Paint markings and surface noise
+- Multiple billets per frame in surveillance camera views
+- Small text regions (~50-100px) in wide-angle shots
 
 ## Architecture
 
-Two-stage pipeline: **Preprocessing** + **OCR** with intelligent fallback.
+Multi-engine pipeline with VLM fallback:
 
 ```
 Image
@@ -26,7 +27,7 @@ PaddleOCR (DBNet++ detection + SVTR recognition)
   |
   |-- confidence >= 0.85 --> Result
   |
-  |-- confidence < 0.85 --> VLM Fallback (Claude Vision API)
+  |-- confidence < 0.85 --> VLM Fallback (Claude Vision / Florence-2)
   |                              |
   |                              v
   |                           Result
@@ -35,41 +36,68 @@ PaddleOCR (DBNet++ detection + SVTR recognition)
 Post-processing (character confusion correction + format validation)
 ```
 
-### Why Two Stages?
+## OCR Engines Evaluated
 
-- PaddleOCR is 10-50x faster than VLMs and runs offline on edge devices (Jetson Orin)
-- VLM serves as intelligent fallback for hard cases only (~$0.01/image)
-- Validated by research: Wei & Zhou (Feb 2025) achieved 91-94% weekly accuracy on billet stamps with DBNet+SVTR
-
-## OCR Engines
-
-| Engine | Type | Speed | Accuracy | Cost |
-|--------|------|-------|----------|------|
-| PaddleOCR PP-OCRv5 | Local | ~100ms | Primary engine | Free |
-| Claude Vision (Sonnet) | Cloud API | ~3.5s | 66.7% char avg | ~$0.01/image |
-| Florence-2 (0.23B) | Local GPU | ~126ms | 53.8% char avg | Free |
+| Engine | Type | Speed | Best Accuracy | Cost | Status |
+|--------|------|:-----:|:------------:|:----:|:------:|
+| **Claude Vision (Sonnet 4.5)** | Cloud VLM | ~3s | **66.7%** char | ~$0.005/img | Primary |
+| **Florence-2 (0.23B)** | Local VLM | **126ms** | **53.8%** char | Free | Recommended for edge |
+| PaddleOCR PP-OCRv5 | Local OCR | ~100ms | 15.0% char | Free | With bbox crop |
+| EasyOCR | Local OCR | ~23s | 0% | Free | Tested, poor results |
+| TrOCR | Local hybrid | ~30s | - | Free | Implemented |
+| docTR (PARSeq) | Local OCR | ~5s | - | Free | Implemented |
+| GOT-OCR-2.0 | Local VLM | ~2s | - | Free | Needs CUDA GPU |
 
 ## Benchmark Results
 
-Evaluated on 5 images graded easy to extreme difficulty:
+### Original Images (5 high-res close-up photos)
 
 | Method | Avg Char Accuracy | Avg Word Accuracy | Avg Time |
 |--------|:-:|:-:|:-:|
-| Ensemble (Paddle+VLM) | 66.7% | 20.0% | 22678ms |
-| VLM Raw (Claude) | 66.7% | 20.0% | 3302ms |
+| **VLM Raw (Claude)** | **66.7%** | 20.0% | 3302ms |
 | VLM Center Crop | 63.3% | 20.0% | 3095ms |
 | VLM Preprocessed | 56.7% | 20.0% | 3046ms |
-| VLM Fallback | 56.7% | 20.0% | 3297ms |
-| Florence-2 Crop | 53.8% | 20.0% | 194ms |
+| **Florence-2 Crop** | **53.8%** | **20.0%** | **126ms** |
 | Florence-2 Raw | 31.4% | 0.0% | 4966ms |
 | PaddleOCR Raw | 3.3% | 0.0% | 72159ms |
-| CLAHE + Correction | 2.0% | 0.0% | - |
-| PaddleOCR + CLAHE | 0.0% | 0.0% | 50930ms |
-| ROI + CLAHE | 0.0% | 0.0% | 15056ms |
 
-> **Note:** PaddleOCR's default PP-OCRv5 models are trained on clean document text, not industrial dot-matrix stamps. Fine-tuning on billet-specific data would be needed for production use. VLM Raw (unprocessed photos sent to Claude) currently gives the best accuracy.
+### Roboflow Dataset (30 surveillance camera images, 640x640)
+
+| Method | Avg Char Accuracy | Avg Word Accuracy |
+|--------|:-:|:-:|
+| **VLM Center Crop** | **57.4%** | 16.7% |
+| VLM Raw | 54.7% | 13.3% |
+| VLM Preprocessed | 46.8% | 16.7% |
+| Bbox Crop + PaddleOCR | 15.0% | 0.0% |
+| PaddleOCR Raw | 1.9% | 0.0% |
+| EasyOCR | 0.0% | 0.0% |
+
+> **Key Insight:** VLMs significantly outperform traditional OCR on industrial stamp reading. Florence-2 runs locally for free and gets near-VLM accuracy at 126ms/image — making it viable for edge deployment. CLAHE preprocessing actually *hurts* VLM performance on paint-stenciled text.
 
 Full reports in [`docs/`](docs/).
+
+## Roboflow Dataset Integration
+
+Integrated the [ztai/steel-billet](https://universe.roboflow.com/ztai/steel-billet) dataset from Roboflow Universe:
+
+- **1,783 images** (1638 train + 145 valid) at 640x640 resolution
+- **15,998 bounding boxes** (COCO format) marking individual billet faces
+- White paint-stenciled numbers: 5-digit heat number + 4-digit sequence
+- Avg 9 billets per surveillance camera frame
+
+```bash
+# Download dataset (requires ROBOFLOW_API_KEY in .env)
+python scripts/download_roboflow_dataset.py --copy-to-raw
+
+# Parse COCO annotations to bbox JSON
+python scripts/parse_roboflow_annotations.py
+
+# Triage images for stamp visibility
+python scripts/triage_dataset.py --max-images 50 --use-bbox
+
+# Extract ground truth using VLM
+python scripts/extract_ground_truth.py --max-images 50 --use-bbox --skip-existing
+```
 
 ## Project Structure
 
@@ -80,23 +108,30 @@ billet-ocr-setup/
 |   |-- models.py                  # Shared data models (BilletReading, OCRMethod)
 |   |-- preprocessing/
 |   |   |-- pipeline.py            # CLAHE + bilateral filter pipeline
-|   |   |-- roi_detector.py        # Billet face ROI detection
+|   |   |-- roi_detector.py        # Billet face ROI detection (4 strategies)
 |   |   |-- perspective.py         # Perspective correction
 |   |-- ocr/
-|   |   |-- paddle_ocr.py          # PaddleOCR integration
-|   |   |-- vlm_reader.py          # Claude Vision API reader
-|   |   |-- florence2_reader.py     # Florence-2 local VLM reader
+|   |   |-- paddle_ocr.py          # PaddleOCR PP-OCRv5 integration
+|   |   |-- vlm_reader.py          # Claude Vision API reader (3 prompt versions)
+|   |   |-- florence2_reader.py    # Florence-2 local VLM reader
+|   |   |-- easyocr_reader.py      # EasyOCR wrapper
+|   |   |-- trocr_reader.py        # TrOCR (PaddleOCR det + ViT recognition)
+|   |   |-- doctr_reader.py        # docTR with PARSeq recognition
+|   |   |-- got_ocr_reader.py      # GOT-OCR-2.0 (GPU-only)
 |   |   |-- ensemble.py            # PaddleOCR + VLM fallback pipeline
 |   |-- postprocess/
 |       |-- validator.py           # Format validation + character confusion map
 |       |-- char_replace.py        # Character replacement with confidence scoring
 |-- scripts/
-|   |-- benchmark.py               # Accuracy benchmark suite
-|   |-- extract_ground_truth.py    # Ground truth annotation helper
-|-- tests/                         # 234 unit tests
+|   |-- benchmark.py               # Multi-engine accuracy benchmark suite
+|   |-- extract_ground_truth.py    # VLM-powered ground truth extraction
+|   |-- download_roboflow_dataset.py  # Roboflow dataset downloader
+|   |-- parse_roboflow_annotations.py # COCO annotation parser
+|   |-- triage_dataset.py          # VLM-based image triage
+|-- tests/                         # 195+ unit tests
 |-- data/
 |   |-- raw/                       # Billet photos (not committed)
-|   |-- annotated/                 # Ground truth JSON
+|   |-- annotated/                 # Ground truth + bbox annotations
 |-- docs/                          # Benchmark reports + research notes
 ```
 
@@ -128,10 +163,11 @@ pip install torch --index-url https://download.pytorch.org/whl/cu124
 
 ### Environment Variables
 
-Create a `.env` file for VLM fallback:
+Create a `.env` file:
 
 ```
 ANTHROPIC_API_KEY=your-key-here
+ROBOFLOW_API_KEY=your-key-here    # Optional, for dataset download
 ```
 
 ## Usage
@@ -139,60 +175,69 @@ ANTHROPIC_API_KEY=your-key-here
 ### Run the Benchmark
 
 ```bash
-# Full benchmark (PaddleOCR + VLM)
+# Full benchmark (PaddleOCR + VLM + all methods)
 python scripts/benchmark.py
 
 # VLM-only comparison
 python scripts/benchmark.py --vlm-only
 
-# Include Florence-2 evaluation
-python scripts/benchmark.py --vlm-only --florence2
+# Include Florence-2
+python scripts/benchmark.py --florence2
 
-# Output to specific file
-python scripts/benchmark.py --output docs/results.md
+# Include alternative engines + bbox cropping
+python scripts/benchmark.py --all-engines --bbox-crop
+
+# Limit to N images (useful for large datasets)
+python scripts/benchmark.py --max-images 30 --shuffle
+
+# No VLM (fast, PaddleOCR only)
+python scripts/benchmark.py --no-vlm --bbox-crop
 ```
 
 ### Run Tests
 
 ```bash
-# All tests (234 tests)
+# All tests (195+ tests)
 python -m pytest tests/ -v
-
-# Specific module
-python -m pytest tests/test_florence2.py -v
 
 # Skip accuracy benchmark (requires raw images)
 python -m pytest tests/ -v --ignore=tests/test_accuracy_benchmark.py
 ```
 
-## Billet Number Format
+## Billet Number Formats
 
-Stamps follow this pattern:
+Two formats encountered across datasets:
 
+**Original dataset (dot-matrix stamps):**
 ```
 Line 1: 192435        (6-digit heat number)
 Line 2: 3 09          (strand + sequence)
 ```
 
-- Heat number: 5-7 digits
-- Strand: single digit (1-9)
-- Sequence: 1-3 digits
+**Roboflow dataset (paint-stenciled):**
+```
+Line 1: 60008         (5-digit heat number)
+Line 2: 5383          (4-digit sequence)
+```
 
-## Key Preprocessing Insights
+## Key Findings
 
-- **Bilateral filter before CLAHE** -- smooth noise first, then enhance contrast
-- **CLAHE on LAB color space** (L channel only) -- single most impactful intervention
-- **Do NOT use adaptive thresholding** with neural network OCR engines
-- **Center cropping** (60%) significantly improves VLM and Florence-2 accuracy by focusing on the stamp region
+1. **VLMs are the best approach** for industrial stamp reading — Claude Vision at 67% and Florence-2 at 54% vs. PaddleOCR at 3-15%
+2. **Florence-2 is the edge deployment candidate** — 126ms, free, local, no API needed
+3. **CLAHE preprocessing helps PaddleOCR** but **hurts VLM performance** on paint-stenciled text
+4. **Bounding box cropping** is the single biggest PaddleOCR improvement (1.9% -> 15.0%)
+5. **Fine-tuning on labeled data** is the recommended next step for production accuracy
 
 ## Tech Stack
 
 - **Python 3.11** with type hints throughout
 - **OpenCV 4.x** for image preprocessing
 - **PaddleOCR 3.x** (DBNet++ + SVTR) for primary OCR
-- **Anthropic Claude API** for VLM fallback
-- **Florence-2** (HuggingFace transformers) for local VLM evaluation
-- **pytest** for testing (234 tests)
+- **Anthropic Claude API** (Sonnet 4.5) for VLM fallback
+- **Florence-2** (HuggingFace transformers) for local VLM
+- **EasyOCR, TrOCR, docTR** as alternative engines
+- **Roboflow** for dataset management
+- **pytest** for testing (195+ tests)
 - **loguru** for structured logging
 
 ## License

@@ -1,5 +1,329 @@
 [
   {
+    "image": "20250314122512_jpg.rf.d1dc11b738404bf3782db5a7934f0992.jpg",
+    "heat_number": "60226",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60226",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250316144312_jpg.rf.0d90a90447309aa866ed4c2f5cdb2ad8.jpg",
+    "heat_number": "66524",
+    "strand": null,
+    "sequence": "5384",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "66524",
+      "5384"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250316165933_jpg.rf.5a25ded7cc7958384aad59cd625dadb2.jpg",
+    "heat_number": "86041",
+    "strand": null,
+    "sequence": "5714",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "86041",
+      "5714"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250316184022_jpg.rf.50b1fea536c575eb73f28884dc6a7795.jpg",
+    "heat_number": "86837",
+    "strand": null,
+    "sequence": "3592",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "86837",
+      "3592"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250317011538_jpg.rf.299b27e41810d3c0ab9841dd4af37530.jpg",
+    "heat_number": "60824",
+    "strand": null,
+    "sequence": "5373",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60824",
+      "5373"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250317082939_jpg.rf.53585de9df9bf549d2738fd796cf4624.jpg",
+    "heat_number": "86200",
+    "strand": null,
+    "sequence": "1122",
+    "notes": "",
+    "vlm_confidence": 0.65,
+    "all_text": [
+      "86200",
+      "1122"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250317232807_jpg.rf.8e63e1abcbd5b8037379bd45210eb133.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "112",
+    "notes": "",
+    "vlm_confidence": 0.65,
+    "all_text": [
+      "60008",
+      "112"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250318122803_jpg.rf.75d953e1c40b86c448c5ee2dd7d83f3e.jpg",
+    "heat_number": "M162",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "M162",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250319021642_jpg.rf.c4a7c7118703755e72bec4eab17f1541.jpg",
+    "heat_number": "70227",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "70227",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250319095628_jpg.rf.92db986fd409d4c0f1e84eb4969ed4d2.jpg",
+    "heat_number": "82371",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "82371",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250320050658_jpg.rf.787ad9a503c0aed193eacf02f8011a64.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": null,
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "60008"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250321125300_jpg.rf.f8fec1e3531303307c4e7138aaacd4e0.jpg",
+    "heat_number": "60145",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60145",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503290441220175_jpg.rf.84d2d777cbe0ac6b68cb295f4ac4b167.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503290724084610_jpg.rf.f242f059955a1067a4b499ca050ebacc.jpg",
+    "heat_number": "81821",
+    "strand": null,
+    "sequence": "4153",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "81821",
+      "4153"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503292337161741_jpg.rf.d3d287781590a043805d3a2eb49b9376.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503300444408940_jpg.rf.b0738afe796670562b56c97a68854f6e.jpg",
+    "heat_number": "61308",
+    "strand": null,
+    "sequence": "5244",
+    "notes": "",
+    "vlm_confidence": 0.92,
+    "all_text": [
+      "61308",
+      "5244"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503301010426208_jpg.rf.f212f5b8d25f6f09be91dd8e098b2e5c.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503301318042741_jpg.rf.158e2359ad20afd2fa8e054e4ff46574.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503301444517644_jpg.rf.28f7b309125bac3153c5f02c518bfef9.jpg",
+    "heat_number": "M7PU",
+    "strand": null,
+    "sequence": "5V23",
+    "notes": "",
+    "vlm_confidence": 0.65,
+    "all_text": [
+      "M7PU",
+      "5V23"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503302211263868_jpg.rf.4bbb4db66b4cbe04cd806516a5407e9e.jpg",
+    "heat_number": "61374",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "61374",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503311848550698_jpg.rf.2ba245d291eec4e1efd98fe467309ffd.jpg",
+    "heat_number": "61414",
+    "strand": null,
+    "sequence": "513",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "61414",
+      "513"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503311848550698_jpg.rf.7333f9f6aabf0a0aa0985672a00deb7a.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503312005360997_jpg.rf.8824ff165872e4af0a10bec475ae2526.jpg",
+    "heat_number": "167122",
+    "strand": null,
+    "sequence": "5312",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "167122",
+      "5312"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202503312136148524_jpg.rf.1948d1e9e0c7e34afff76763f08301ec.jpg",
+    "heat_number": "82551",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "82551",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "202504020444158222_jpg.rf.41bf1d353ffe6bc81e5d94f1bfe96967.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "09",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "60008",
+      "09"
+    ],
+    "bbox_used": true
+  },
+  {
     "image": "image_22.png",
     "difficulty": "easy",
     "heat_number": "192435",
@@ -33,5 +357,70 @@
     "heat_number": "186241",
     "strand": "5",
     "sequence": "03"
+  },
+  {
+    "image": "screenshot_2025-04-04_09-24-59_jpg.rf.50141461fbed3b5f88ac20a54fcff749.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_16-16-49_jpg.rf.02fce3b57bb5e5dd99113460ecd0387d.jpg",
+    "heat_number": "60008",
+    "strand": null,
+    "sequence": "5383",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "60008",
+      "5383"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_16-43-54_jpg.rf.1f42494a27d9f48a8a001bc1cd1c0d27.jpg",
+    "heat_number": "75",
+    "strand": null,
+    "sequence": "523",
+    "notes": "",
+    "vlm_confidence": 0.65,
+    "all_text": [
+      "75",
+      "523"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_23-27-34_jpg.rf.6b13c2184c490c7b341f8ca01bb9b537.jpg",
+    "heat_number": "87558",
+    "strand": null,
+    "sequence": "5384",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "87558",
+      "5384"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-06_00-40-22_jpg.rf.44aeaadfc9a3acf0a794edb77c864844.jpg",
+    "heat_number": "82482",
+    "strand": null,
+    "sequence": "5351",
+    "notes": "",
+    "vlm_confidence": 0.75,
+    "all_text": [
+      "82482",
+      "5351"
+    ],
+    "bbox_used": true
   }
 ]

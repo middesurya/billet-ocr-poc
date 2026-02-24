@@ -1,0 +1,37 @@
+[
+  {
+    "image": "image_22.png",
+    "difficulty": "easy",
+    "heat_number": "192435",
+    "strand": "1",
+    "sequence": "07"
+  },
+  {
+    "image": "image_23.png",
+    "difficulty": "medium",
+    "heat_number": "187612",
+    "strand": "3",
+    "sequence": "12"
+  },
+  {
+    "image": "image_24.png",
+    "difficulty": "hard",
+    "heat_number": "185903",
+    "strand": "2",
+    "sequence": "05"
+  },
+  {
+    "image": "image_25.png",
+    "difficulty": "very_hard",
+    "heat_number": "191078",
+    "strand": "4",
+    "sequence": "18"
+  },
+  {
+    "image": "image_26.png",
+    "difficulty": "extreme",
+    "heat_number": "186241",
+    "strand": "5",
+    "sequence": "03"
+  }
+]

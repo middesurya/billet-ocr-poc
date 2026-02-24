@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import cv2
 import numpy as np
@@ -362,12 +362,13 @@ def preprocess_billet_image(
     apply_sharpening: bool = False,
     detect_roi: bool = False,
     correct_perspective: bool = False,
+    roi_bbox: Optional[dict] = None,
 ) -> tuple[np.ndarray, dict[str, float]]:
     """Run the full preprocessing pipeline on a billet image.
 
     Pipeline order (deliberate):
         1. Load image
-        2. ROI detection + crop    (optional, ``detect_roi=True``)
+        2. ROI detection + crop    (optional, ``detect_roi=True`` or ``roi_bbox``)
         3. Perspective correction  (optional, ``correct_perspective=True``)
         4. Bilateral filter  -- smooth sensor/JPEG noise, preserve edges
         5. CLAHE             -- enhance local contrast via LAB L-channel
@@ -385,6 +386,10 @@ def preprocess_billet_image(
         correct_perspective: When True, warps the detected ROI to a
             fronto-parallel square.  Requires ``detect_roi=True`` to have
             any effect.  Defaults to False.
+        roi_bbox: Optional pre-defined bounding box dict with keys
+            ``x``, ``y``, ``width``, ``height``. When provided, bypasses
+            auto-detection and crops directly to this region. Useful with
+            Roboflow annotations.
 
     Returns:
         A two-tuple ``(processed_image, timing_dict)`` where:
@@ -414,9 +419,29 @@ def preprocess_billet_image(
     )
     logger.info("preprocess_billet_image: starting pipeline for '{}'", source_label)
 
-    # -- Stage 2: ROI detection + crop (optional) ----------------------------
+    # -- Stage 2: ROI crop (explicit bbox OR auto-detection) -----------------
     roi_result = None
-    if detect_roi:
+    if roi_bbox is not None:
+        # Explicit bbox provided (e.g., from Roboflow annotations)
+        t0 = time.perf_counter()
+        x = int(roi_bbox["x"])
+        y = int(roi_bbox["y"])
+        w = int(roi_bbox["width"])
+        h = int(roi_bbox["height"])
+        # Add padding (5% of bbox dimensions)
+        pad_x = int(w * 0.05)
+        pad_y = int(h * 0.05)
+        x1 = max(0, x - pad_x)
+        y1 = max(0, y - pad_y)
+        x2 = min(image.shape[1], x + w + pad_x)
+        y2 = min(image.shape[0], y + h + pad_y)
+        image = image[y1:y2, x1:x2]
+        logger.info(
+            "preprocess_billet_image: cropped to bbox ({},{})-({}x{}) with padding",
+            x, y, w, h,
+        )
+        timing["roi_ms"] = (time.perf_counter() - t0) * 1000
+    elif detect_roi:
         from src.preprocessing.roi_detector import detect_best_billet_face, crop_to_roi
 
         t0 = time.perf_counter()

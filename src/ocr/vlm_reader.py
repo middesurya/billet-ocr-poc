@@ -151,6 +151,8 @@ def build_billet_ocr_prompt(version: int = VLM_PROMPT_VERSION) -> str:
     """
     if version == 1:
         return _PROMPT_V1
+    if version == 3:
+        return _PROMPT_V3
     return _PROMPT_V2
 
 
@@ -206,6 +208,31 @@ _PROMPT_V2 = (
     "Return ONLY this JSON (no explanation, no markdown):\n"
     '{"heat_number": "XXXXXX", "strand": "X", "sequence": "XX", '
     '"confidence": 0.XX, "raw_text": "full text as seen"}'
+)
+
+_PROMPT_V3 = (
+    "You are an expert OCR system reading identification numbers painted or "
+    "stamped on steel billet end faces.\n"
+    "\n"
+    "The numbers may be:\n"
+    "- White paint stenciled characters\n"
+    "- Dot-matrix / pin-matrix stamped indentations\n"
+    "- Any printed/marked numbers on the square cross-section face\n"
+    "\n"
+    "TYPICAL LAYOUT (varies by mill):\n"
+    "- Line 1 (top): HEAT NUMBER — typically 5-6 digits (e.g., 60008, 184767)\n"
+    "- Line 2 (bottom): SEQUENCE/STRAND — typically 2-4 digits (e.g., 5383, 3 09)\n"
+    "\n"
+    "ANALYSIS STEPS:\n"
+    "1. Locate the stamped/painted region on the billet face\n"
+    "2. Read each character carefully — characters are primarily digits 0-9\n"
+    "3. If there are multiple billets visible, read the LARGEST / most centered one\n"
+    "4. If a character is unclear, use '?' as placeholder\n"
+    "\n"
+    "Return ONLY this JSON (no explanation, no markdown):\n"
+    '{"heat_number": "XXXXX", "strand": null, "sequence": "XXXX", '
+    '"confidence": 0.XX, "raw_text": "full text as seen", '
+    '"all_text": ["line1", "line2"]}'
 )
 
 

@@ -78,13 +78,17 @@ def _patch_anthropic(response: MagicMock):
 
 
 class TestBuildPrompt:
-    """Tests for build_billet_ocr_prompt() — version 1 and version 2."""
+    """Tests for build_billet_ocr_prompt() — version 1, 2, and 3."""
 
-    def test_v2_prompt_is_default(self) -> None:
-        """Default call should return V2 prompt (chain-of-thought)."""
+    def test_default_prompt_matches_config(self) -> None:
+        """Default call should return the prompt matching VLM_PROMPT_VERSION config."""
+        from src.config import VLM_PROMPT_VERSION
         prompt = build_billet_ocr_prompt()
-        assert "PIN-MATRIX" in prompt
-        assert "ANALYSIS STEPS" in prompt
+        if VLM_PROMPT_VERSION == 2:
+            assert "PIN-MATRIX" in prompt
+        elif VLM_PROMPT_VERSION == 3:
+            assert "paint" in prompt.lower() or "stencil" in prompt.lower()
+        assert "ANALYSIS STEPS" in prompt or "Return ONLY" in prompt
 
     def test_v1_prompt_explicit(self) -> None:
         """Passing version=1 should return V1 prompt (original)."""
@@ -98,6 +102,13 @@ class TestBuildPrompt:
         prompt = build_billet_ocr_prompt(version=2)
         assert "PIN-MATRIX" in prompt
         assert "ANALYSIS STEPS" in prompt
+
+    def test_v3_prompt_explicit(self) -> None:
+        """Passing version=3 should return V3 flexible format prompt."""
+        prompt = build_billet_ocr_prompt(version=3)
+        assert "paint" in prompt.lower()
+        assert "all_text" in prompt
+        assert "PIN-MATRIX" not in prompt
 
     def test_v1_contains_key_instructions(self) -> None:
         """V1 prompt must contain critical instructions for OCR accuracy."""

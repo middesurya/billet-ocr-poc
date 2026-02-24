@@ -20,6 +20,7 @@ import numpy as np
 from loguru import logger
 
 from src.config import (
+    BBOX_ANNOTATIONS_PATH,
     ROI_CANNY_THRESHOLD1,
     ROI_CANNY_THRESHOLD2,
     ROI_MIN_AREA_RATIO,
@@ -31,6 +32,119 @@ from src.config import (
     ROI_DILATE_ITERATIONS,
 )
 from src.models import BilletROI
+
+
+# Cache for loaded bbox annotations
+_bbox_annotations: Optional[dict[str, list[dict]]] = None
+
+
+def _load_bbox_annotations(
+    bbox_path: Optional[Union[str, Path]] = None,
+) -> dict[str, list[dict]]:
+    """Load Roboflow bounding box annotations from JSON file.
+
+    Results are cached after first load to avoid repeated disk I/O.
+
+    Args:
+        bbox_path: Path to the bbox annotations JSON. Defaults to
+            BBOX_ANNOTATIONS_PATH from config.
+
+    Returns:
+        Dict mapping image filename to list of bbox dicts.
+        Empty dict if file doesn't exist.
+    """
+    global _bbox_annotations
+    if _bbox_annotations is not None:
+        return _bbox_annotations
+
+    path = Path(bbox_path) if bbox_path else BBOX_ANNOTATIONS_PATH
+    if not path.exists():
+        _bbox_annotations = {}
+        return _bbox_annotations
+
+    import json
+    with open(path, encoding="utf-8") as f:
+        _bbox_annotations = json.load(f)
+    logger.debug(
+        "Loaded bbox annotations for {} images from {}",
+        len(_bbox_annotations), path,
+    )
+    return _bbox_annotations
+
+
+def _strategy_roboflow_bbox(
+    image_name: str,
+    image_shape: tuple[int, ...],
+    bbox_annotations: Optional[dict[str, list[dict]]] = None,
+) -> list[BilletROI]:
+    """Strategy 0: Use pre-annotated Roboflow bounding boxes.
+
+    Highest priority strategy -- uses human-annotated bounding boxes from
+    the Roboflow dataset. These are COCO-format bboxes for the 'batch'
+    class (billet locations in surveillance camera frames).
+
+    Confidence is set to 1.0 since these are human-annotated.
+
+    Args:
+        image_name: Filename of the image (used to look up annotations).
+        image_shape: Shape of the image (H, W) or (H, W, C).
+        bbox_annotations: Pre-loaded annotations dict, or None to load
+            from default path.
+
+    Returns:
+        List of BilletROI from annotations, sorted by area (descending).
+    """
+    if bbox_annotations is None:
+        bbox_annotations = _load_bbox_annotations()
+
+    if not bbox_annotations or image_name not in bbox_annotations:
+        return []
+
+    bboxes = bbox_annotations[image_name]
+    h_img, w_img = image_shape[:2]
+
+    rois: list[BilletROI] = []
+    for bbox in bboxes:
+        x = int(bbox["x"])
+        y = int(bbox["y"])
+        w = int(bbox["width"])
+        h = int(bbox["height"])
+
+        # Clip to image bounds
+        x = max(0, x)
+        y = max(0, y)
+        w = min(w, w_img - x)
+        h = min(h, h_img - y)
+
+        if w <= 0 or h <= 0:
+            continue
+
+        corners = [
+            (float(x), float(y)),            # TL
+            (float(x + w), float(y)),        # TR
+            (float(x + w), float(y + h)),    # BR
+            (float(x), float(y + h)),        # BL
+        ]
+
+        roi = BilletROI(
+            corners=corners,
+            bounding_rect=(x, y, w, h),
+            area=float(w * h),
+            confidence=1.0,  # Human-annotated
+            contour=None,
+        )
+        rois.append(roi)
+
+    # Sort by area descending (largest billet first)
+    rois.sort(key=lambda r: r.area, reverse=True)
+
+    if rois:
+        logger.debug(
+            "Strategy 0 (Roboflow bbox): found {} annotated ROIs for '{}'",
+            len(rois), image_name,
+        )
+
+    return rois
 
 
 def _get_edge_map(gray: np.ndarray) -> np.ndarray:
@@ -233,10 +347,13 @@ def _strategy_center_crop(
 def detect_billet_faces(
     image: Union[np.ndarray, str, Path],
     max_faces: int = 5,
+    image_name: Optional[str] = None,
+    bbox_annotations: Optional[dict[str, list[dict]]] = None,
 ) -> list[BilletROI]:
     """Detect billet end faces in an image using a multi-strategy cascade.
 
     Strategies are tried in order:
+        0. Roboflow bbox annotations (if available for this image)
         1. Edge-based quadrilateral detection
         2. Largest-contour bounding rect
         3. Center-weighted crop (always produces a result)
@@ -244,6 +361,9 @@ def detect_billet_faces(
     Args:
         image: BGR image array, or path to an image file.
         max_faces: Maximum number of faces to return.
+        image_name: Optional image filename for bbox annotation lookup.
+            If not provided and image is a path, the filename is extracted.
+        bbox_annotations: Optional pre-loaded bbox annotations dict.
 
     Returns:
         List of BilletROI sorted by confidence (descending), up to max_faces.
@@ -251,6 +371,22 @@ def detect_billet_faces(
     from src.preprocessing.pipeline import load_image
 
     img = load_image(image)
+
+    # Extract image name for bbox lookup
+    if image_name is None and isinstance(image, (str, Path)):
+        image_name = Path(image).name
+
+    # Strategy 0: Roboflow bbox annotations (highest priority)
+    if image_name:
+        candidates = _strategy_roboflow_bbox(
+            image_name, img.shape, bbox_annotations
+        )
+        if candidates:
+            logger.info(
+                "detect_billet_faces: Strategy 0 found {} annotated ROIs",
+                len(candidates),
+            )
+            return candidates[:max_faces]
 
     if img.ndim == 2:
         gray = img

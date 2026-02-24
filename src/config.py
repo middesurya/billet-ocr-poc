@@ -1,13 +1,27 @@
 """Central configuration for the Billet OCR POC."""
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
+RAW_ORIGINAL_DIR = DATA_DIR / "raw_original"
 ANNOTATED_DIR = DATA_DIR / "annotated"
 SYNTHETIC_DIR = DATA_DIR / "synthetic"
 DEBUG_DIR = DATA_DIR / "debug"
+
+# Roboflow dataset
+ROBOFLOW_API_KEY = os.environ.get("ROBOFLOW_API_KEY", "")
+ROBOFLOW_WORKSPACE = "ztai"
+ROBOFLOW_PROJECT = "steel-billet"
+ROBOFLOW_VERSION = 7
+ROBOFLOW_DOWNLOAD_DIR = DATA_DIR / "roboflow_download"
+BBOX_ANNOTATIONS_PATH = ANNOTATED_DIR / "roboflow_bboxes.json"
 
 # Preprocessing parameters
 CLAHE_CLIP_LIMIT = 3.0
@@ -27,7 +41,7 @@ PADDLEOCR_MAX_SIDE_LEN = 1280  # Resize images so longest side <= this before OC
 VLM_TEMPERATURE = 0.0
 VLM_MAX_TOKENS = 256
 VLM_MODEL = "claude-sonnet-4-5-20250929"
-VLM_PROMPT_VERSION = 2  # 1 = original, 2 = chain-of-thought with analysis steps
+VLM_PROMPT_VERSION = 3  # 1 = original, 2 = chain-of-thought, 3 = flexible format (paint + dot-matrix)
 VLM_CROP_RATIO = 0.6  # Crop center 60% of image for VLM (stamps are centered)
 
 # Florence-2 configuration
@@ -35,6 +49,23 @@ FLORENCE2_MODEL_ID = "florence-community/Florence-2-base"
 FLORENCE2_TASK = "<OCR>"                    # or "<OCR_WITH_REGION>"
 FLORENCE2_MAX_NEW_TOKENS = 100
 FLORENCE2_DEVICE = "cuda"                  # "cpu" if no GPU available
+
+# EasyOCR configuration
+EASYOCR_LANGUAGES = ["en"]
+EASYOCR_GPU = False  # Set True if GPU available
+
+# TrOCR configuration
+TROCR_MODEL_ID = "microsoft/trocr-large-printed"
+TROCR_DEVICE = "cuda"  # "cpu" if no GPU available
+
+# docTR configuration
+DOCTR_DET_ARCH = "db_resnet50"
+DOCTR_RECO_ARCH = "parseq"  # PARSeq recognizer (~24M params, CPU-capable)
+DOCTR_DEVICE = "cpu"  # "cuda" if GPU available
+
+# GOT-OCR configuration
+GOT_OCR_MODEL_ID = "stepfun-ai/GOT-OCR-2.0-hf"
+GOT_OCR_DEVICE = "cuda"  # Requires GPU — too slow on CPU
 
 # Supported image formats
 SUPPORTED_FORMATS = [".jpg", ".jpeg", ".png", ".bmp"]

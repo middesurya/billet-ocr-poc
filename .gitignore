@@ -29,6 +29,8 @@ credentials.json
 
 # Data (large images / model outputs)
 data/raw/
+data/raw_original/
+data/roboflow_download/
 data/debug/
 data/synthetic/
 

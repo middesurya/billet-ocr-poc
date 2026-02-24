@@ -1,0 +1,272 @@
+[
+  {
+    "image": "20250314122512_jpg.rf.d1dc11b738404bf3782db5a7934f0992.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '602216' on top line and '5331' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250316144312_jpg.rf.0d90a90447309aa866ed4c2f5cdb2ad8.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on billet end face showing '10621' on top line and '5384' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250316165933_jpg.rf.5a25ded7cc7958384aad59cd625dadb2.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "partial",
+    "description": "White paint stenciled characters visible on the billet end face showing '88041' on top line and '5?1' (middle digit unclear) on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250316184022_jpg.rf.50b1fea536c575eb73f28884dc6a7795.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '86857' on top line and '5952' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250317011538_jpg.rf.299b27e41810d3c0ab9841dd4af37530.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing '60824' on top line and '5373' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250317082939_jpg.rf.53585de9df9bf549d2738fd796cf4624.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "partial",
+    "description": "White paint stenciled text visible on the billet end face showing 'OCEQ' or similar characters and what appears to be 'ITEC' below it",
+    "used_bbox": true
+  },
+  {
+    "image": "20250317232807_jpg.rf.8e63e1abcbd5b8037379bd45210eb133.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "medium",
+    "readability": "partial",
+    "description": "White painted or stenciled characters visible on the billet end face, appearing to show alphanumeric markings though individual characters are difficult to resolve clearly in this image quality",
+    "used_bbox": true
+  },
+  {
+    "image": "20250318122803_jpg.rf.75d953e1c40b86c448c5ee2dd7d83f3e.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing 'M163' on top line and '6320' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "20250319021642_jpg.rf.c4a7c7118703755e72bec4eab17f1541.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "partial",
+    "description": "White paint stenciled characters visible on the billet end face, appearing to show alphanumeric identification marking",
+    "used_bbox": true
+  },
+  {
+    "image": "20250319095628_jpg.rf.92db986fd409d4c0f1e84eb4969ed4d2.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '32671' and what appears to be '5324' or similar characters below it",
+    "used_bbox": true
+  },
+  {
+    "image": "20250320050658_jpg.rf.787ad9a503c0aed193eacf02f8011a64.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "partial",
+    "description": "White paint stenciled text visible on the billet end face showing 'DOCNO' followed by what appears to be additional characters below it, possibly 'HEAT' and other identification numbers",
+    "used_bbox": true
+  },
+  {
+    "image": "20250321125300_jpg.rf.f8fec1e3531303307c4e7138aaacd4e0.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '87445' with additional characters below",
+    "used_bbox": true
+  },
+  {
+    "image": "202503290441220175_jpg.rf.84d2d777cbe0ac6b68cb295f4ac4b167.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing 'KRYTS 6073' with '5343' below it",
+    "used_bbox": true
+  },
+  {
+    "image": "202503290724084610_jpg.rf.f242f059955a1067a4b499ca050ebacc.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled text visible on the billet end face showing 'SACA' on top line and 'A162' below it",
+    "used_bbox": true
+  },
+  {
+    "image": "202503292337161741_jpg.rf.d3d287781590a043805d3a2eb49b9376.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face. The marking appears to show 'KMLB' on the top line and 'M702' on the bottom line.",
+    "used_bbox": true
+  },
+  {
+    "image": "202503300444408940_jpg.rf.b0738afe796670562b56c97a68854f6e.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing '81308' on top line and '5244' below it",
+    "used_bbox": true
+  },
+  {
+    "image": "202503301010426208_jpg.rf.f212f5b8d25f6f09be91dd8e098b2e5c.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "partial",
+    "description": "White paint stenciled characters visible on the billet end face showing what appears to be identification numbers/text",
+    "used_bbox": true
+  },
+  {
+    "image": "202503301318042741_jpg.rf.158e2359ad20afd2fa8e054e4ff46574.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '1205' on top line and '301' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "202503301444517644_jpg.rf.28f7b309125bac3153c5f02c518bfef9.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing 'N4750' above 'SWE2'",
+    "used_bbox": true
+  },
+  {
+    "image": "202503302211263868_jpg.rf.4bbb4db66b4cbe04cd806516a5407e9e.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '6137A' on top line and '523' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "202503311848550698_jpg.rf.2ba245d291eec4e1efd98fe467309ffd.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing '8844' on top line and 'S13' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "202503311848550698_jpg.rf.7333f9f6aabf0a0aa0985672a00deb7a.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '8844' on top line and '5313' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "202503312005360997_jpg.rf.8824ff165872e4af0a10bec475ae2526.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face. Top number appears to be '167122' and bottom number appears to be '1532' or similar digits.",
+    "used_bbox": true
+  },
+  {
+    "image": "202503312136148524_jpg.rf.1948d1e9e0c7e34afff76763f08301ec.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face. The marking appears to show '8C51' in the upper portion and '5951' in the lower portion of the visible face.",
+    "used_bbox": true
+  },
+  {
+    "image": "202504020444158222_jpg.rf.41bf1d353ffe6bc81e5d94f1bfe96967.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing '10032' and additional characters below",
+    "used_bbox": true
+  },
+  {
+    "image": "screenshot_2025-04-04_09-24-59_jpg.rf.50141461fbed3b5f88ac20a54fcff749.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing 'CONC' on top line and '6557' below it, along with what appears to be '1118' at the bottom",
+    "used_bbox": true
+  },
+  {
+    "image": "screenshot_2025-04-04_16-16-49_jpg.rf.02fce3b57bb5e5dd99113460ecd0387d.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing 'SER 3' and what appears to be 'TRACE' below it",
+    "used_bbox": true
+  },
+  {
+    "image": "screenshot_2025-04-04_16-43-54_jpg.rf.1f42494a27d9f48a8a001bc1cd1c0d27.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '0753' on top line and '5283' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "screenshot_2025-04-04_23-27-34_jpg.rf.6b13c2184c490c7b341f8ca01bb9b537.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled numbers visible on the billet end face showing '81550' on top line and '5931' on bottom line",
+    "used_bbox": true
+  },
+  {
+    "image": "screenshot_2025-04-06_00-40-22_jpg.rf.44aeaadfc9a3acf0a794edb77c864844.jpg",
+    "category": "has_stamp",
+    "has_stamp": true,
+    "confidence": "high",
+    "readability": "clear",
+    "description": "White paint stenciled characters visible on the billet end face showing '87402' on top line and '7551' on bottom line",
+    "used_bbox": true
+  }
+]

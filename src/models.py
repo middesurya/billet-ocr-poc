@@ -10,8 +10,13 @@ class OCRMethod(str, Enum):
     """Method used to produce the OCR reading."""
     PADDLE_RAW = "paddle_raw"
     PADDLE_PREPROCESSED = "paddle_preprocessed"
+    PADDLE_BBOX_CROP = "paddle_bbox_crop"
     VLM_CLAUDE = "vlm_claude"
     VLM_FLORENCE2 = "vlm_florence2"
+    EASYOCR = "easyocr"
+    TROCR = "trocr"
+    DOCTR = "doctr"
+    GOT_OCR = "got_ocr"
     ENSEMBLE = "ensemble"
     MANUAL = "manual"
 

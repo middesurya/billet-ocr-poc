@@ -49,8 +49,11 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _SCRIPT_DIR.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
+import random
+
 from src.config import (
     ANNOTATED_DIR,
+    BBOX_ANNOTATIONS_PATH,
     BILATERAL_D,
     BILATERAL_SIGMA_COLOR,
     BILATERAL_SIGMA_SPACE,
@@ -220,6 +223,11 @@ def _run_image_benchmark(
     vlm_only: bool = False,
     vlm_model: str = VLM_MODEL,
     use_florence2: bool = False,
+    use_easyocr: bool = False,
+    use_trocr: bool = False,
+    use_doctr: bool = False,
+    use_bbox_crop: bool = False,
+    bbox_annotations: Optional[dict] = None,
 ) -> dict:
     """Run all pipeline stages on a single image and collect results.
 
@@ -229,6 +237,11 @@ def _run_image_benchmark(
         vlm_only: If True, skip PaddleOCR stages and only run VLM + ensemble.
         vlm_model: Claude model ID for VLM stages.
         use_florence2: Whether to run Florence-2 stages.
+        use_easyocr: Whether to run EasyOCR stages.
+        use_trocr: Whether to run TrOCR stages.
+        use_doctr: Whether to run docTR stages.
+        use_bbox_crop: Whether to run bbox-crop + PaddleOCR stages.
+        bbox_annotations: Pre-loaded Roboflow bbox annotations dict.
 
     Returns:
         Result dict with keys: image, ground_truth, methods (nested dict),
@@ -701,6 +714,143 @@ def _run_image_benchmark(
             "word_acc": None,
         }
 
+    # ------------------------------------------------------------------
+    # Stage 7: Bbox-crop + CLAHE + PaddleOCR (Roboflow annotations)
+    # ------------------------------------------------------------------
+    if use_bbox_crop and bbox_annotations and not vlm_only:
+        img_name = entry["image"]
+        if img_name in bbox_annotations:
+            try:
+                from src.ocr.paddle_ocr import run_paddle_pipeline
+
+                bbox = bbox_annotations[img_name][0]  # First/largest bbox
+                bbox_preprocessed, bbox_timing = preprocess_billet_image(
+                    img_path, roi_bbox=bbox,
+                )
+                t0 = time.perf_counter()
+                bbox_reading = run_paddle_pipeline(
+                    bbox_preprocessed, method=OCRMethod.PADDLE_BBOX_CROP,
+                )
+                bbox_ocr_ms = (time.perf_counter() - t0) * 1000
+
+                result["methods"]["bbox_crop"] = {
+                    "heat_number": bbox_reading.heat_number,
+                    "strand": bbox_reading.strand,
+                    "sequence": bbox_reading.sequence,
+                    "confidence": bbox_reading.confidence,
+                    "preproc_time_ms": bbox_timing["total_ms"],
+                    "ocr_time_ms": bbox_ocr_ms,
+                    "char_acc": calculate_character_accuracy(bbox_reading.heat_number, gt_heat),
+                    "word_acc": calculate_word_accuracy(bbox_reading.heat_number, gt_heat),
+                }
+            except Exception as exc:
+                result["errors"].append(f"Bbox-crop error: {exc}")
+                result["methods"]["bbox_crop"] = {
+                    "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                }
+        else:
+            result["methods"]["bbox_crop"] = {
+                "heat_number": None, "char_acc": None, "word_acc": None,
+                "skipped": "No bbox annotation for this image",
+            }
+    else:
+        result["methods"]["bbox_crop"] = {
+            "heat_number": None, "char_acc": None, "word_acc": None,
+        }
+
+    # ------------------------------------------------------------------
+    # Stage 8: EasyOCR on preprocessed image
+    # ------------------------------------------------------------------
+    if use_easyocr:
+        try:
+            from src.ocr.easyocr_reader import run_easyocr_pipeline
+
+            ocr_input = preprocessed if preprocessed is not None else img_path
+            t0 = time.perf_counter()
+            easy_reading = run_easyocr_pipeline(ocr_input)
+            easy_ms = (time.perf_counter() - t0) * 1000
+
+            result["methods"]["easyocr"] = {
+                "heat_number": easy_reading.heat_number,
+                "strand": easy_reading.strand,
+                "sequence": easy_reading.sequence,
+                "confidence": easy_reading.confidence,
+                "ocr_time_ms": easy_ms,
+                "char_acc": calculate_character_accuracy(easy_reading.heat_number, gt_heat),
+                "word_acc": calculate_word_accuracy(easy_reading.heat_number, gt_heat),
+            }
+        except Exception as exc:
+            result["errors"].append(f"EasyOCR error: {exc}")
+            result["methods"]["easyocr"] = {
+                "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+            }
+    else:
+        result["methods"]["easyocr"] = {
+            "heat_number": None, "char_acc": None, "word_acc": None,
+        }
+
+    # ------------------------------------------------------------------
+    # Stage 9: TrOCR on preprocessed image
+    # ------------------------------------------------------------------
+    if use_trocr:
+        try:
+            from src.ocr.trocr_reader import run_trocr_pipeline
+
+            ocr_input = preprocessed if preprocessed is not None else img_path
+            t0 = time.perf_counter()
+            trocr_reading = run_trocr_pipeline(ocr_input)
+            trocr_ms = (time.perf_counter() - t0) * 1000
+
+            result["methods"]["trocr"] = {
+                "heat_number": trocr_reading.heat_number,
+                "strand": trocr_reading.strand,
+                "sequence": trocr_reading.sequence,
+                "confidence": trocr_reading.confidence,
+                "ocr_time_ms": trocr_ms,
+                "char_acc": calculate_character_accuracy(trocr_reading.heat_number, gt_heat),
+                "word_acc": calculate_word_accuracy(trocr_reading.heat_number, gt_heat),
+            }
+        except Exception as exc:
+            result["errors"].append(f"TrOCR error: {exc}")
+            result["methods"]["trocr"] = {
+                "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+            }
+    else:
+        result["methods"]["trocr"] = {
+            "heat_number": None, "char_acc": None, "word_acc": None,
+        }
+
+    # ------------------------------------------------------------------
+    # Stage 10: docTR on preprocessed image
+    # ------------------------------------------------------------------
+    if use_doctr:
+        try:
+            from src.ocr.doctr_reader import run_doctr_pipeline
+
+            ocr_input = preprocessed if preprocessed is not None else img_path
+            t0 = time.perf_counter()
+            doctr_reading = run_doctr_pipeline(ocr_input)
+            doctr_ms = (time.perf_counter() - t0) * 1000
+
+            result["methods"]["doctr"] = {
+                "heat_number": doctr_reading.heat_number,
+                "strand": doctr_reading.strand,
+                "sequence": doctr_reading.sequence,
+                "confidence": doctr_reading.confidence,
+                "ocr_time_ms": doctr_ms,
+                "char_acc": calculate_character_accuracy(doctr_reading.heat_number, gt_heat),
+                "word_acc": calculate_word_accuracy(doctr_reading.heat_number, gt_heat),
+            }
+        except Exception as exc:
+            result["errors"].append(f"docTR error: {exc}")
+            result["methods"]["doctr"] = {
+                "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+            }
+    else:
+        result["methods"]["doctr"] = {
+            "heat_number": None, "char_acc": None, "word_acc": None,
+        }
+
     return result
 
 
@@ -713,12 +863,16 @@ _METHOD_LABELS = {
     "preprocessed": "PaddleOCR + CLAHE",
     "roi_preprocessed": "ROI + CLAHE",
     "postprocessed": "CLAHE + Correction",
+    "bbox_crop": "Bbox Crop + CLAHE",
     "vlm": "VLM Fallback",
     "vlm_only": "VLM Preprocessed",
     "vlm_raw": "VLM Raw",
     "vlm_center_crop": "VLM Center Crop",
     "florence2_raw": "Florence-2 Raw",
     "florence2_crop": "Florence-2 Crop",
+    "easyocr": "EasyOCR",
+    "trocr": "TrOCR",
+    "doctr": "docTR",
     "ensemble": "Ensemble",
 }
 
@@ -806,8 +960,11 @@ def generate_markdown_report(
     # ------------------------------------------------------------------
     method_keys = [
         "raw", "preprocessed", "roi_preprocessed", "postprocessed",
+        "bbox_crop",
         "vlm", "vlm_only", "vlm_raw", "vlm_center_crop",
-        "florence2_raw", "florence2_crop", "ensemble",
+        "florence2_raw", "florence2_crop",
+        "easyocr", "trocr", "doctr",
+        "ensemble",
     ]
 
     # Collect per-method accuracy lists (skip None values for VLM not triggered).
@@ -1083,6 +1240,48 @@ def main() -> None:
         default=False,
         help="Include Florence-2 stages in the benchmark.",
     )
+    parser.add_argument(
+        "--easyocr",
+        action="store_true",
+        default=False,
+        help="Include EasyOCR stages in the benchmark.",
+    )
+    parser.add_argument(
+        "--trocr",
+        action="store_true",
+        default=False,
+        help="Include TrOCR stages in the benchmark.",
+    )
+    parser.add_argument(
+        "--doctr",
+        action="store_true",
+        default=False,
+        help="Include docTR stages in the benchmark.",
+    )
+    parser.add_argument(
+        "--bbox-crop",
+        action="store_true",
+        default=False,
+        help="Include bbox-crop + PaddleOCR using Roboflow annotations.",
+    )
+    parser.add_argument(
+        "--all-engines",
+        action="store_true",
+        default=False,
+        help="Enable all alternative OCR engines (EasyOCR, TrOCR, docTR, bbox-crop).",
+    )
+    parser.add_argument(
+        "--max-images",
+        type=int,
+        default=0,
+        help="Max images to benchmark (0 = all). Useful for quick testing.",
+    )
+    parser.add_argument(
+        "--shuffle",
+        action="store_true",
+        default=False,
+        help="Randomize image order before benchmarking.",
+    )
     args = parser.parse_args()
 
     output_path = Path(args.output).resolve()
@@ -1090,6 +1289,10 @@ def main() -> None:
     vlm_only = args.vlm_only
     vlm_model = args.vlm_model
     use_florence2 = args.florence2
+    use_easyocr = args.easyocr or args.all_engines
+    use_trocr = args.trocr or args.all_engines
+    use_doctr = args.doctr or args.all_engines
+    use_bbox_crop = args.bbox_crop or args.all_engines
 
     # --vlm-only implies VLM is enabled.
     if vlm_only:
@@ -1145,6 +1348,32 @@ def main() -> None:
     if use_florence2:
         from src.config import FLORENCE2_MODEL_ID as _f2_id
         print(f"Florence-2: enabled (model={_f2_id})")
+    if use_easyocr:
+        print("EasyOCR: enabled")
+    if use_trocr:
+        print("TrOCR: enabled")
+    if use_doctr:
+        print("docTR: enabled")
+
+    # Load bbox annotations if needed
+    bbox_annotations: Optional[dict] = None
+    if use_bbox_crop:
+        if BBOX_ANNOTATIONS_PATH.exists():
+            with open(BBOX_ANNOTATIONS_PATH, encoding="utf-8") as fh:
+                bbox_annotations = json.load(fh)
+            print(f"Bbox annotations: loaded {len(bbox_annotations)} images")
+        else:
+            print(f"WARNING: Bbox annotations not found at {BBOX_ANNOTATIONS_PATH}")
+            print("  Run scripts/parse_roboflow_annotations.py first.")
+            use_bbox_crop = False
+
+    # Shuffle and limit
+    if args.shuffle:
+        random.shuffle(ground_truth)
+        print(f"Shuffled {len(ground_truth)} images")
+    if args.max_images > 0:
+        ground_truth = ground_truth[:args.max_images]
+        print(f"Limited to {args.max_images} images")
 
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -1161,6 +1390,9 @@ def main() -> None:
         result = _run_image_benchmark(
             entry, use_vlm=use_vlm, vlm_only=vlm_only, vlm_model=vlm_model,
             use_florence2=use_florence2,
+            use_easyocr=use_easyocr, use_trocr=use_trocr,
+            use_doctr=use_doctr, use_bbox_crop=use_bbox_crop,
+            bbox_annotations=bbox_annotations,
         )
         all_results.append(result)
 
@@ -1211,6 +1443,20 @@ def main() -> None:
                 f"acc={_format_acc(f2_raw.get('char_acc')):6s}  |  "
                 f"F2-Crop acc={_format_acc(f2_crop.get('char_acc')):6s}"
             )
+        # Alternative OCR engines summary.
+        alt_engines = [
+            ("Bbox-Crop", "bbox_crop"),
+            ("EasyOCR", "easyocr"),
+            ("TrOCR", "trocr"),
+            ("docTR", "doctr"),
+        ]
+        alt_parts = []
+        for label, key in alt_engines:
+            m = result["methods"].get(key, {})
+            if m.get("char_acc") is not None:
+                alt_parts.append(f"{label}={_format_acc(m.get('char_acc'))}")
+        if alt_parts:
+            print(f"  Alt: {' | '.join(alt_parts)}")
         if result["errors"]:
             for err in result["errors"]:
                 print(f"  WARNING: {err}")
@@ -1228,8 +1474,11 @@ def main() -> None:
     # ------------------------------------------------------------------
     summary_keys = [
         "raw", "preprocessed", "roi_preprocessed", "postprocessed",
+        "bbox_crop",
         "vlm_only", "vlm_raw", "vlm_center_crop",
-        "florence2_raw", "florence2_crop", "ensemble",
+        "florence2_raw", "florence2_crop",
+        "easyocr", "trocr", "doctr",
+        "ensemble",
     ]
     print("\n=== SUMMARY ===")
     print(f"{'Method':<25} {'Avg Char Acc':>13} {'Avg Word Acc':>13}")
