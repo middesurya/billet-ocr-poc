@@ -40,6 +40,10 @@ data/synthetic/
 *.pdparams
 *.pdiparams
 
+# Pre-trained model files (downloaded at runtime)
+models/*.pb
+models/florence2_billet_lora/
+
 # Claude Code
 .claude/
 

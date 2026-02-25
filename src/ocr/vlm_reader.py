@@ -153,6 +153,8 @@ def build_billet_ocr_prompt(version: int = VLM_PROMPT_VERSION) -> str:
         return _PROMPT_V1
     if version == 3:
         return _PROMPT_V3
+    if version == 4:
+        return _PROMPT_V4
     return _PROMPT_V2
 
 
@@ -233,6 +235,27 @@ _PROMPT_V3 = (
     '{"heat_number": "XXXXX", "strand": null, "sequence": "XXXX", '
     '"confidence": 0.XX, "raw_text": "full text as seen", '
     '"all_text": ["line1", "line2"]}'
+)
+
+_PROMPT_V4 = (
+    "This is a CROPPED image of ONE steel billet end face. The billet has "
+    "been isolated from a multi-billet surveillance frame.\n"
+    "\n"
+    "Read the identification numbers painted or stamped on this billet face.\n"
+    "\n"
+    "TYPICAL LAYOUT:\n"
+    "- Top line: HEAT NUMBER — typically 4-6 digits (e.g., 60008, 60731)\n"
+    "- Bottom line: SEQUENCE NUMBER — typically 3-5 digits (e.g., 5383, 5272)\n"
+    "\n"
+    "RULES:\n"
+    "- Characters are primarily digits 0-9\n"
+    "- Read ALL visible text lines on the billet face\n"
+    "- If a character is unclear, use '?' as placeholder\n"
+    "- The image shows only ONE billet — read everything visible\n"
+    "\n"
+    "Return ONLY this JSON (no explanation, no markdown):\n"
+    '{"heat_number": "XXXXX", "sequence": "XXXX", '
+    '"all_text": ["line1", "line2"], "confidence": 0.XX}'
 )
 
 
@@ -348,6 +371,7 @@ def read_billet_with_vlm(
 
 def read_billet_with_vlm_for_ground_truth(
     image: Union[str, Path, np.ndarray],
+    prompt_version: int = VLM_PROMPT_VERSION,
 ) -> dict:
     """Run Claude Vision on a billet image and return the full response dict.
 
@@ -359,6 +383,7 @@ def read_billet_with_vlm_for_ground_truth(
 
     Args:
         image: Absolute file path (str or Path) or BGR numpy array.
+        prompt_version: Prompt version to use (4 = single-billet crop).
 
     Returns:
         The parsed JSON dictionary from Claude's response.  On failure an empty
@@ -367,7 +392,7 @@ def read_billet_with_vlm_for_ground_truth(
     """
     image_name = _image_label(image)
     logger.info(
-        f"[VLM-GT] Ground truth extraction call | image={image_name}"
+        f"[VLM-GT] Ground truth extraction call | image={image_name} | prompt=V{prompt_version}"
     )
 
     try:
@@ -378,7 +403,7 @@ def read_billet_with_vlm_for_ground_truth(
         )
         return {}
 
-    prompt_text = build_billet_ocr_prompt()
+    prompt_text = build_billet_ocr_prompt(version=prompt_version)
     messages = [
         {
             "role": "user",

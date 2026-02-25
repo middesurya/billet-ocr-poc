@@ -31,12 +31,15 @@ python-multipart>=0.0.12
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
 
-# Alternative OCR Engines (optional)
-easyocr>=1.7.0
 # python-doctr[torch]>=0.8.0  # Uncomment if needed; install separately
 
 # Dataset Management
 roboflow>=1.1.0
+
+# Fine-tuning (optional — needed for Florence-2 LoRA training)
+peft>=0.14.0
+accelerate>=1.0.0
+datasets>=3.0.0
 
 # Utilities
 loguru>=0.7.0

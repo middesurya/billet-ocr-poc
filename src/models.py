@@ -13,11 +13,8 @@ class OCRMethod(str, Enum):
     PADDLE_BBOX_CROP = "paddle_bbox_crop"
     VLM_CLAUDE = "vlm_claude"
     VLM_FLORENCE2 = "vlm_florence2"
-    EASYOCR = "easyocr"
-    TROCR = "trocr"
-    DOCTR = "doctr"
-    GOT_OCR = "got_ocr"
     ENSEMBLE = "ensemble"
+    ENSEMBLE_V2 = "ensemble_v2"
     MANUAL = "manual"
 
 
@@ -99,6 +96,38 @@ class GroundTruth:
     strand: Optional[str] = None
     sequence: Optional[str] = None
     notes: Optional[str] = None
+
+
+@dataclass
+class BilletGroundTruth:
+    """Ground truth for a SINGLE billet within a multi-billet image.
+
+    Each surveillance image has ~9 billets. This stores GT per billet,
+    with an explicit bbox_index and bbox coordinates so that benchmarking
+    uses the exact same crop that was labeled.
+
+    Attributes:
+        image: Original image filename (relative to data/raw/).
+        bbox_index: Which bbox in roboflow_bboxes.json (0-indexed).
+        bbox: Bounding box dict with x, y, width, height keys.
+        heat_number: Correct heat number (e.g., "60731").
+        sequence: Correct sequence number (e.g., "5282").
+        strand: Correct strand identifier.
+        all_text: All text lines read from the billet face.
+        vlm_confidence: VLM confidence when GT was extracted.
+        verified: True after human review of the crop image.
+        notes: Optional human notes about this billet.
+    """
+    image: str
+    bbox_index: int
+    bbox: dict
+    heat_number: str
+    sequence: Optional[str] = None
+    strand: Optional[str] = None
+    all_text: list[str] = field(default_factory=list)
+    vlm_confidence: float = 0.0
+    verified: bool = False
+    notes: str = ""
 
 
 @dataclass

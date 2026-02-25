@@ -18,6 +18,10 @@ from src.preprocessing.perspective import (
     correct_perspective,
     correct_perspective_from_points,
 )
+from src.preprocessing.super_resolution import (
+    needs_upscale,
+    upscale_image,
+)
 
 __all__ = [
     "load_image",
@@ -32,4 +36,6 @@ __all__ = [
     "order_corners",
     "correct_perspective",
     "correct_perspective_from_points",
+    "needs_upscale",
+    "upscale_image",
 ]

@@ -1,425 +1,383 @@
 [
   {
-    "image": "20250314122512_jpg.rf.d1dc11b738404bf3782db5a7934f0992.jpg",
-    "heat_number": "60226",
+    "image": "20250316151241_jpg.rf.4743ea9ebc9ba623f1bb3f86a7f82e0c.jpg",
+    "heat_number": "60731",
     "strand": null,
-    "sequence": "5383",
+    "sequence": "5282",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.88,
     "all_text": [
-      "60226",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250316144312_jpg.rf.0d90a90447309aa866ed4c2f5cdb2ad8.jpg",
-    "heat_number": "66524",
-    "strand": null,
-    "sequence": "5384",
-    "notes": "",
-    "vlm_confidence": 0.82,
-    "all_text": [
-      "66524",
-      "5384"
-    ],
-    "bbox_used": true
+      "60731",
+      "5282"
+    ]
   },
   {
     "image": "20250316165933_jpg.rf.5a25ded7cc7958384aad59cd625dadb2.jpg",
-    "heat_number": "86041",
+    "heat_number": "68641",
     "strand": null,
-    "sequence": "5714",
-    "notes": "",
-    "vlm_confidence": 0.82,
-    "all_text": [
-      "86041",
-      "5714"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250316184022_jpg.rf.50b1fea536c575eb73f28884dc6a7795.jpg",
-    "heat_number": "86837",
-    "strand": null,
-    "sequence": "3592",
-    "notes": "",
-    "vlm_confidence": 0.85,
-    "all_text": [
-      "86837",
-      "3592"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250317011538_jpg.rf.299b27e41810d3c0ab9841dd4af37530.jpg",
-    "heat_number": "60824",
-    "strand": null,
-    "sequence": "5373",
-    "notes": "",
-    "vlm_confidence": 0.85,
-    "all_text": [
-      "60824",
-      "5373"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250317082939_jpg.rf.53585de9df9bf549d2738fd796cf4624.jpg",
-    "heat_number": "86200",
-    "strand": null,
-    "sequence": "1122",
-    "notes": "",
-    "vlm_confidence": 0.65,
-    "all_text": [
-      "86200",
-      "1122"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250317232807_jpg.rf.8e63e1abcbd5b8037379bd45210eb133.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": "112",
-    "notes": "",
-    "vlm_confidence": 0.65,
-    "all_text": [
-      "60008",
-      "112"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250318122803_jpg.rf.75d953e1c40b86c448c5ee2dd7d83f3e.jpg",
-    "heat_number": "M162",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "M162",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250319021642_jpg.rf.c4a7c7118703755e72bec4eab17f1541.jpg",
-    "heat_number": "70227",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.82,
-    "all_text": [
-      "70227",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250319095628_jpg.rf.92db986fd409d4c0f1e84eb4969ed4d2.jpg",
-    "heat_number": "82371",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "82371",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250320050658_jpg.rf.787ad9a503c0aed193eacf02f8011a64.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": null,
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "60008"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "20250321125300_jpg.rf.f8fec1e3531303307c4e7138aaacd4e0.jpg",
-    "heat_number": "60145",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.85,
-    "all_text": [
-      "60145",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "202503290441220175_jpg.rf.84d2d777cbe0ac6b68cb295f4ac4b167.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.85,
-    "all_text": [
-      "60008",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "202503290724084610_jpg.rf.f242f059955a1067a4b499ca050ebacc.jpg",
-    "heat_number": "81821",
-    "strand": null,
-    "sequence": "4153",
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "81821",
-      "4153"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "202503292337161741_jpg.rf.d3d287781590a043805d3a2eb49b9376.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "60008",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "202503300444408940_jpg.rf.b0738afe796670562b56c97a68854f6e.jpg",
-    "heat_number": "61308",
-    "strand": null,
-    "sequence": "5244",
+    "sequence": "5382",
     "notes": "",
     "vlm_confidence": 0.92,
     "all_text": [
-      "61308",
-      "5244"
+      "68641",
+      "5382"
+    ]
+  },
+  {
+    "image": "20250316194929_jpg.rf.dc9dd51ef2b4819b2740ee4cae9a378e.jpg",
+    "heat_number": "61196",
+    "strand": null,
+    "sequence": "5254K",
+    "notes": "",
+    "vlm_confidence": 0.92,
+    "all_text": [
+      "61196",
+      "5254K"
+    ]
+  },
+  {
+    "image": "20250317141401_jpg.rf.12604c217d3b2d98432886dd6272ec94.jpg",
+    "heat_number": "16T88",
+    "strand": null,
+    "sequence": "4832",
+    "notes": "",
+    "vlm_confidence": 0.52,
+    "all_text": [
+      "16T88",
+      "4832"
+    ]
+  },
+  {
+    "image": "20250318040532_jpg.rf.5a0d95c3ac90ccbbc6ac7c9410e160a9.jpg",
+    "heat_number": "60003",
+    "strand": null,
+    "sequence": "5211",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "60003",
+      "5211T"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503301010426208_jpg.rf.f212f5b8d25f6f09be91dd8e098b2e5c.jpg",
-    "heat_number": "60008",
+    "image": "20250319061732_jpg.rf.2d5837433375fa5b6aaa412648135a96.jpg",
+    "heat_number": "61473",
+    "strand": null,
+    "sequence": "5213",
+    "notes": "",
+    "vlm_confidence": 0.72,
+    "all_text": [
+      "61473",
+      "5213"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250320045606_jpg.rf.6c031f71a2039b3dfbde5d294f4a1c42.jpg",
+    "heat_number": "28333",
+    "strand": null,
+    "sequence": "P82A8",
+    "notes": "",
+    "vlm_confidence": 0.45,
+    "all_text": [
+      "28333",
+      "P82A8"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "20250320165326_jpg.rf.8236b4d1749df5f2fdf0eea81df0bb6f.jpg",
+    "heat_number": "68989",
     "strand": null,
     "sequence": "5383",
     "notes": "",
-    "vlm_confidence": 0.75,
+    "vlm_confidence": 0.72,
     "all_text": [
-      "60008",
+      "68989",
       "5383"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503301318042741_jpg.rf.158e2359ad20afd2fa8e054e4ff46574.jpg",
-    "heat_number": "60008",
+    "image": "20250321142707_jpg.rf.a37d6ce6712bcae3b16fa9777ab6029b.jpg",
+    "heat_number": "63769",
     "strand": null,
-    "sequence": "5383",
+    "sequence": "99419",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.35,
     "all_text": [
-      "60008",
-      "5383"
+      "63769",
+      "CCCB",
+      "99419"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503301444517644_jpg.rf.28f7b309125bac3153c5f02c518bfef9.jpg",
-    "heat_number": "M7PU",
+    "image": "202503281446340726_jpg.rf.a6e95c44ba1d6d1ce15461060e2eec1e.jpg",
+    "heat_number": "2345",
     "strand": null,
-    "sequence": "5V23",
+    "sequence": "18087",
     "notes": "",
-    "vlm_confidence": 0.65,
+    "vlm_confidence": 0.55,
     "all_text": [
-      "M7PU",
-      "5V23"
+      "2345",
+      "18087"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503302211263868_jpg.rf.4bbb4db66b4cbe04cd806516a5407e9e.jpg",
-    "heat_number": "61374",
+    "image": "202503281919417768_jpg.rf.6d9f43d892f0ebbc68214b4cf2b45fd4.jpg",
+    "heat_number": "26AM",
     "strand": null,
-    "sequence": "5383",
+    "sequence": "P1065",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.45,
     "all_text": [
-      "61374",
-      "5383"
+      "26AM",
+      "P1065"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503311848550698_jpg.rf.2ba245d291eec4e1efd98fe467309ffd.jpg",
-    "heat_number": "61414",
+    "image": "202503290756039305_jpg.rf.e57c80c6527140cc64a21ee9573db2ed.jpg",
+    "heat_number": "86218",
     "strand": null,
-    "sequence": "513",
+    "sequence": "5255",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.45,
     "all_text": [
-      "61414",
-      "513"
+      "86218",
+      "5255"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503311848550698_jpg.rf.7333f9f6aabf0a0aa0985672a00deb7a.jpg",
-    "heat_number": "60008",
+    "image": "202503300048465184_jpg.rf.b0c954ce701fd2d48a8c3c73e19a7536.jpg",
+    "heat_number": "85338",
     "strand": null,
-    "sequence": "5383",
+    "sequence": "61219",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.55,
     "all_text": [
-      "60008",
-      "5383"
+      "85338",
+      "61219"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503312005360997_jpg.rf.8824ff165872e4af0a10bec475ae2526.jpg",
-    "heat_number": "167122",
+    "image": "202503300207515435_jpg.rf.a264e295527701f444c6a1682d2ff8f1.jpg",
+    "heat_number": "61215",
     "strand": null,
     "sequence": "5312",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.72,
     "all_text": [
-      "167122",
+      "61215",
       "5312"
     ],
     "bbox_used": true
   },
   {
-    "image": "202503312136148524_jpg.rf.1948d1e9e0c7e34afff76763f08301ec.jpg",
-    "heat_number": "82551",
+    "image": "202503312109477150_jpg.rf.3036b2a7284e3fdce90ee0668293d1bf.jpg",
+    "heat_number": "53934",
     "strand": null,
-    "sequence": "5383",
+    "sequence": "8L708",
     "notes": "",
-    "vlm_confidence": 0.85,
+    "vlm_confidence": 0.45,
     "all_text": [
-      "82551",
-      "5383"
+      "53934",
+      "8L708"
     ],
     "bbox_used": true
   },
   {
-    "image": "202504020444158222_jpg.rf.41bf1d353ffe6bc81e5d94f1bfe96967.jpg",
-    "heat_number": "60008",
+    "image": "202504010149466243_jpg.rf.071f3435d7b34ecf8bab38bde9db89c7.jpg",
+    "heat_number": "61592",
     "strand": null,
-    "sequence": "09",
-    "notes": "",
-    "vlm_confidence": 0.75,
-    "all_text": [
-      "60008",
-      "09"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "image_22.png",
-    "difficulty": "easy",
-    "heat_number": "192435",
-    "strand": "1",
-    "sequence": "07"
-  },
-  {
-    "image": "image_23.png",
-    "difficulty": "medium",
-    "heat_number": "187612",
-    "strand": "3",
-    "sequence": "12"
-  },
-  {
-    "image": "image_24.png",
-    "difficulty": "hard",
-    "heat_number": "185903",
-    "strand": "2",
-    "sequence": "05"
-  },
-  {
-    "image": "image_25.png",
-    "difficulty": "very_hard",
-    "heat_number": "191078",
-    "strand": "4",
-    "sequence": "18"
-  },
-  {
-    "image": "image_26.png",
-    "difficulty": "extreme",
-    "heat_number": "186241",
-    "strand": "5",
-    "sequence": "03"
-  },
-  {
-    "image": "screenshot_2025-04-04_09-24-59_jpg.rf.50141461fbed3b5f88ac20a54fcff749.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": "5383",
-    "notes": "",
-    "vlm_confidence": 0.85,
-    "all_text": [
-      "60008",
-      "5383"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "screenshot_2025-04-04_16-16-49_jpg.rf.02fce3b57bb5e5dd99113460ecd0387d.jpg",
-    "heat_number": "60008",
-    "strand": null,
-    "sequence": "5383",
+    "sequence": "5353",
     "notes": "",
     "vlm_confidence": 0.82,
     "all_text": [
-      "60008",
-      "5383"
+      "61592",
+      "5353"
     ],
     "bbox_used": true
   },
   {
-    "image": "screenshot_2025-04-04_16-43-54_jpg.rf.1f42494a27d9f48a8a001bc1cd1c0d27.jpg",
-    "heat_number": "75",
+    "image": "202504010501322714_jpg.rf.b4ef69556ff49628c345e9666787970f.jpg",
+    "heat_number": "61430",
     "strand": null,
-    "sequence": "523",
-    "notes": "",
-    "vlm_confidence": 0.65,
-    "all_text": [
-      "75",
-      "523"
-    ],
-    "bbox_used": true
-  },
-  {
-    "image": "screenshot_2025-04-04_23-27-34_jpg.rf.6b13c2184c490c7b341f8ca01bb9b537.jpg",
-    "heat_number": "87558",
-    "strand": null,
-    "sequence": "5384",
+    "sequence": "5332K",
     "notes": "",
     "vlm_confidence": 0.82,
     "all_text": [
-      "87558",
-      "5384"
+      "61430",
+      "5332K"
     ],
     "bbox_used": true
   },
   {
-    "image": "screenshot_2025-04-06_00-40-22_jpg.rf.44aeaadfc9a3acf0a794edb77c864844.jpg",
-    "heat_number": "82482",
+    "image": "202504011107581787_jpg.rf.f22d0a70f552c2febbde741279e45fc3.jpg",
+    "heat_number": "61467",
     "strand": null,
-    "sequence": "5351",
+    "sequence": "5354",
     "notes": "",
-    "vlm_confidence": 0.75,
+    "vlm_confidence": 0.88,
     "all_text": [
-      "82482",
-      "5351"
+      "61467",
+      "5354"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-02_17-06-26_jpg.rf.e0260f3c5493b3e03ef3a13e6006a154.jpg",
+    "heat_number": "61482",
+    "strand": null,
+    "sequence": "5312",
+    "notes": "",
+    "vlm_confidence": 0.72,
+    "all_text": [
+      "61482",
+      "5312"
+    ]
+  },
+  {
+    "image": "screenshot_2025-04-03_14-40-30_jpg.rf.e786ec197c9e9c5fded9c1fc1915c685.jpg",
+    "heat_number": "11165",
+    "strand": null,
+    "sequence": "55100",
+    "notes": "",
+    "vlm_confidence": 0.35,
+    "all_text": [
+      "11165",
+      "55100"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-03_19-40-58_jpg.rf.9640da77089a24983c9c16e089258eaa.jpg",
+    "heat_number": "68931",
+    "strand": null,
+    "sequence": "5B41T",
+    "notes": "",
+    "vlm_confidence": 0.72,
+    "all_text": [
+      "68931",
+      "5B41T"
+    ]
+  },
+  {
+    "image": "screenshot_2025-04-04_05-33-54_jpg.rf.5de152bf6f68816e4fa593e672430bb7.jpg",
+    "heat_number": "69490",
+    "strand": null,
+    "sequence": "1532",
+    "notes": "",
+    "vlm_confidence": 0.55,
+    "all_text": [
+      "69490",
+      "1532"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_05-51-16_jpg.rf.e7b954733c55a7f44fa05646ea94fabc.jpg",
+    "heat_number": "23238",
+    "strand": null,
+    "sequence": "P0+00",
+    "notes": "",
+    "vlm_confidence": 0.35,
+    "all_text": [
+      "23238",
+      "P0+00"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_08-29-00_jpg.rf.80a924315f4041b18eec6437c45c61e9.jpg",
+    "heat_number": "17418",
+    "strand": null,
+    "sequence": "4862",
+    "notes": "",
+    "vlm_confidence": 0.62,
+    "all_text": [
+      "17418",
+      "4862"
+    ]
+  },
+  {
+    "image": "screenshot_2025-04-04_11-00-31_jpg.rf.f4066dc0086504ef3d4c23b70eb68752.jpg",
+    "heat_number": "61344",
+    "strand": null,
+    "sequence": "5381",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "61344",
+      "5381"
+    ]
+  },
+  {
+    "image": "screenshot_2025-04-04_11-55-00_jpg.rf.3040ce12d2073fcac126cfb636d186a5.jpg",
+    "heat_number": "81409",
+    "strand": null,
+    "sequence": "5322",
+    "notes": "",
+    "vlm_confidence": 0.85,
+    "all_text": [
+      "81409",
+      "5322"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-04_18-38-47_jpg.rf.0ec080c2b8aaae62f4fa928642467bc6.jpg",
+    "heat_number": "61558",
+    "strand": null,
+    "sequence": "5341",
+    "notes": "",
+    "vlm_confidence": 0.72,
+    "all_text": [
+      "61558",
+      "5341"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-06_02-41-38_jpg.rf.c8314992f06510da1ac3d19636011df2.jpg",
+    "heat_number": "60017",
+    "strand": null,
+    "sequence": "5418",
+    "notes": "",
+    "vlm_confidence": 0.88,
+    "all_text": [
+      "60017",
+      "5418"
+    ],
+    "bbox_used": true
+  },
+  {
+    "image": "screenshot_2025-04-07_05-45-21_jpg.rf.28492552d7f8ae9c7e81ea37472b68ee.jpg",
+    "heat_number": "80876",
+    "strand": null,
+    "sequence": "5462",
+    "notes": "",
+    "vlm_confidence": 0.82,
+    "all_text": [
+      "80876",
+      "5462"
+    ]
+  },
+  {
+    "image": "screenshot_2025-04-07_07-31-20_jpg.rf.ad56d1fbcae227c65664ea68f24c53c1.jpg",
+    "heat_number": "60212",
+    "strand": null,
+    "sequence": "5471T",
+    "notes": "",
+    "vlm_confidence": 0.72,
+    "all_text": [
+      "60212",
+      "5471T"
     ],
     "bbox_used": true
   }

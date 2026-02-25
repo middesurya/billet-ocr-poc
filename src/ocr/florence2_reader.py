@@ -25,6 +25,7 @@ from loguru import logger
 
 from src.config import (
     FLORENCE2_DEVICE,
+    FLORENCE2_LORA_PATH,
     FLORENCE2_MAX_NEW_TOKENS,
     FLORENCE2_MODEL_ID,
     FLORENCE2_TASK,
@@ -41,15 +42,39 @@ from src.postprocess.char_replace import replace_and_score_ocr_text
 
 _model = None
 _processor = None
+_active_device: Optional[str] = None  # Track actual device after fallback
+
+
+def _resolve_device() -> str:
+    """Resolve the compute device, falling back to CPU if CUDA unavailable.
+
+    Returns:
+        Device string ('cuda' or 'cpu').
+    """
+    import torch
+
+    device = FLORENCE2_DEVICE
+    if device == "cuda" and not torch.cuda.is_available():
+        logger.warning(
+            "[Florence-2] CUDA requested but not available — falling back to CPU. "
+            "Set FLORENCE2_DEVICE='cpu' in config.py to suppress this warning."
+        )
+        device = "cpu"
+    return device
 
 
 def _get_model_and_processor(
     model_id: str = FLORENCE2_MODEL_ID,
+    lora_path: Optional[str] = FLORENCE2_LORA_PATH,
 ) -> tuple:
     """Load Florence-2 model and processor (singleton -- loads once).
 
+    When ``lora_path`` is provided, loads LoRA adapter weights on top of
+    the base model using the ``peft`` library.
+
     Args:
         model_id: HuggingFace model ID for Florence-2.
+        lora_path: Path to LoRA adapter directory. None = zero-shot.
 
     Returns:
         Tuple of (model, processor).
@@ -58,7 +83,7 @@ def _get_model_and_processor(
         ImportError: If torch or transformers is not installed.
         RuntimeError: If model download or loading fails.
     """
-    global _model, _processor
+    global _model, _processor, _active_device
 
     if _model is not None and _processor is not None:
         return _model, _processor
@@ -69,21 +94,47 @@ def _get_model_and_processor(
     logger.info(f"[Florence-2] Loading model: {model_id} (first run downloads ~500MB)")
     t0 = time.perf_counter()
 
-    device = FLORENCE2_DEVICE
+    device = _resolve_device()
+    _active_device = device
     dtype = torch.bfloat16 if device == "cuda" else torch.float32
 
     _model = Florence2ForConditionalGeneration.from_pretrained(
         model_id,
         torch_dtype=dtype,
     )
+
+    # Load LoRA adapter if provided
+    if lora_path is not None:
+        lora_dir = Path(lora_path)
+        if lora_dir.exists():
+            try:
+                from peft import PeftModel
+
+                logger.info(f"[Florence-2] Loading LoRA adapter from: {lora_path}")
+                _model = PeftModel.from_pretrained(_model, lora_path)
+                _model = _model.merge_and_unload()
+                logger.info("[Florence-2] LoRA adapter merged successfully")
+            except ImportError:
+                logger.error(
+                    "[Florence-2] peft not installed — cannot load LoRA adapter. "
+                    "Install with: pip install peft>=0.14.0"
+                )
+            except Exception as exc:
+                logger.error(f"[Florence-2] Failed to load LoRA adapter: {exc}")
+        else:
+            logger.warning(
+                f"[Florence-2] LoRA path does not exist: {lora_path} — using base model"
+            )
+
     _model.to(device)
 
     _processor = AutoProcessor.from_pretrained(model_id)
 
     elapsed_ms = (time.perf_counter() - t0) * 1000
+    lora_status = f" | lora={'yes' if lora_path else 'no'}"
     logger.info(
         f"[Florence-2] Model loaded | device={device} | "
-        f"dtype={dtype} | elapsed_ms={elapsed_ms:.0f}"
+        f"dtype={dtype}{lora_status} | elapsed_ms={elapsed_ms:.0f}"
     )
 
     return _model, _processor
@@ -144,7 +195,7 @@ def _run_florence2_inference(
     import torch
 
     model, processor = _get_model_and_processor(model_id)
-    device = FLORENCE2_DEVICE
+    device = _active_device or _resolve_device()
 
     inputs = processor(
         text=task,
@@ -318,13 +369,16 @@ def read_billet_with_florence2(
     else:
         replacement_confidence = 0.0
 
-    # Confidence is intentionally capped at 0.70 (0.3 + 0.4*1.0) because
-    # Florence-2 zero-shot is not expected to be reliable enough for
-    # production use. This keeps it below OCR_CONFIDENCE_THRESHOLD (0.85)
-    # so it would always trigger VLM fallback if used as a primary OCR path.
-    # Florence-2 is positioned as a local evaluation baseline, not primary.
+    # Confidence scaling depends on whether a fine-tuned (LoRA) model is loaded.
+    # Zero-shot: capped at 0.70 (0.3 + 0.4*1.0) — below OCR_CONFIDENCE_THRESHOLD
+    #   so it always triggers VLM fallback if used as primary OCR path.
+    # Fine-tuned: uncapped (0.5 + 0.5*1.0 = 1.0) — can serve as primary OCR.
+    is_finetuned = FLORENCE2_LORA_PATH is not None
     if heat_number is not None:
-        confidence = 0.3 + (0.4 * replacement_confidence)
+        if is_finetuned:
+            confidence = 0.5 + (0.5 * replacement_confidence)
+        else:
+            confidence = 0.3 + (0.4 * replacement_confidence)
     else:
         confidence = 0.1 * replacement_confidence
 
