@@ -51,9 +51,15 @@ FLORENCE2_TASK = "<OCR>"                    # or "<OCR_WITH_REGION>"
 FLORENCE2_MAX_NEW_TOKENS = 100
 FLORENCE2_DEVICE = "cuda"                  # "cpu" if no GPU available
 FLORENCE2_LORA_PATH: Optional[str] = None  # Path to LoRA adapter weights (None = zero-shot)
-# Fine-tuned LoRA available at: models/florence2_billet_lora/best
-# Reverted to zero-shot: fine-tuned model regressed due to low-res training images (640x640)
+# V2 LoRA at models/florence2_billet_lora_v2/best — no improvement over zero-shot (69 entries too small)
+# V1 LoRA regressed due to low-res 640x640 images + noisy VLM-generated labels
 FLORENCE2_BBOX_PAD_RATIO = 0.25            # 25% padding around bbox crop for Florence-2
+
+# Multi-orientation: try these rotations when reading billets (0° = normal, 180° = upside-down)
+MULTI_ORIENT_ANGLES: list[int] = [0, 180]
+
+# Cross-validation: combine F2 + PaddleOCR results for higher accuracy
+CROSS_VALIDATE_ENGINES = True
 
 # Multi-billet GT configuration
 GT_BBOX_PAD_RATIO = 0.10                   # 10% padding around bbox for GT crop
@@ -67,8 +73,8 @@ GT_REVIEW_CROPS_DIR = GT_REVIEW_DIR / "crops"      # Per-billet crop images for 
 SUPERRES_MODEL_NAME = "espcn"                                     # ESPCN is fastest (~50ms)
 SUPERRES_SCALE = 4                                                # Upscale factor
 SUPERRES_MODEL_PATH = PROJECT_ROOT / "models" / "ESPCN_x4.pb"   # Pre-trained model file
-SUPERRES_MIN_SIZE = 200                                           # Only upscale if shortest side < this
-SUPERRES_TARGET_SIZE = 400                                        # Target shortest side after upscale
+SUPERRES_MIN_SIZE = 300                                           # Upscale if shortest side < this (was 200)
+SUPERRES_TARGET_SIZE = 600                                        # Target shortest side after upscale (was 400)
 
 # Supported image formats
 SUPPORTED_FORMATS = [".jpg", ".jpeg", ".png", ".bmp"]

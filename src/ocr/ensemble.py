@@ -85,6 +85,107 @@ def _is_valid_heat(heat: Optional[str]) -> bool:
     return bool(re.match(r"^\d{5,7}$", heat))
 
 
+def _is_valid_5digit_heat(heat: Optional[str]) -> bool:
+    """Check if a heat number is a valid 5-digit Roboflow-format number.
+
+    Args:
+        heat: Heat number string to validate.
+
+    Returns:
+        True if the string is exactly 5 digits.
+    """
+    if not heat:
+        return False
+    return bool(re.match(r"^\d{5}$", heat))
+
+
+def cross_validate_f2_paddle(
+    f2_result: BilletReading,
+    paddle_result: BilletReading,
+) -> BilletReading:
+    """Cross-validate Florence-2 and PaddleOCR results for higher accuracy.
+
+    Decision rules:
+        1. Both agree on same 5-digit heat → high confidence, use either
+        2. Both valid 5-digit but disagree → prefer PaddleOCR (65.2% > 49.6%)
+        3. Only one valid → use the valid one
+        4. Neither valid → return PaddleOCR (better partial results)
+
+    Args:
+        f2_result: BilletReading from Florence-2 (with format validation).
+        paddle_result: BilletReading from PaddleOCR + CLAHE.
+
+    Returns:
+        Best combined BilletReading with method indicating the source.
+    """
+    f2_valid = _is_valid_5digit_heat(f2_result.heat_number)
+    paddle_valid = _is_valid_5digit_heat(paddle_result.heat_number)
+
+    if f2_valid and paddle_valid:
+        if f2_result.heat_number == paddle_result.heat_number:
+            # Agreement — high confidence
+            boosted_conf = min(1.0, max(f2_result.confidence, paddle_result.confidence) + 0.2)
+            logger.info(
+                f"[CrossValidate] AGREE | heat={f2_result.heat_number} | "
+                f"conf={boosted_conf:.2f}"
+            )
+            return BilletReading(
+                heat_number=f2_result.heat_number,
+                sequence=f2_result.sequence or paddle_result.sequence,
+                confidence=boosted_conf,
+                method=OCRMethod.ENSEMBLE_V2,
+                raw_texts=f2_result.raw_texts,
+            )
+        else:
+            # Disagreement — prefer PaddleOCR (higher baseline accuracy)
+            logger.info(
+                f"[CrossValidate] DISAGREE | f2={f2_result.heat_number} "
+                f"paddle={paddle_result.heat_number} → prefer PaddleOCR"
+            )
+            return BilletReading(
+                heat_number=paddle_result.heat_number,
+                sequence=paddle_result.sequence,
+                confidence=paddle_result.confidence * 0.9,
+                method=OCRMethod.ENSEMBLE_V2,
+                raw_texts=paddle_result.raw_texts,
+            )
+    elif f2_valid:
+        logger.info(
+            f"[CrossValidate] F2_ONLY | heat={f2_result.heat_number}"
+        )
+        return BilletReading(
+            heat_number=f2_result.heat_number,
+            sequence=f2_result.sequence,
+            confidence=f2_result.confidence,
+            method=OCRMethod.ENSEMBLE_V2,
+            raw_texts=f2_result.raw_texts,
+        )
+    elif paddle_valid:
+        logger.info(
+            f"[CrossValidate] PADDLE_ONLY | heat={paddle_result.heat_number}"
+        )
+        return BilletReading(
+            heat_number=paddle_result.heat_number,
+            sequence=paddle_result.sequence,
+            confidence=paddle_result.confidence,
+            method=OCRMethod.ENSEMBLE_V2,
+            raw_texts=paddle_result.raw_texts,
+        )
+    else:
+        # Neither valid — return PaddleOCR (better partial results historically)
+        logger.info(
+            f"[CrossValidate] NEITHER_VALID | f2={f2_result.heat_number} "
+            f"paddle={paddle_result.heat_number} → fallback PaddleOCR"
+        )
+        return BilletReading(
+            heat_number=paddle_result.heat_number or f2_result.heat_number,
+            sequence=paddle_result.sequence or f2_result.sequence,
+            confidence=max(paddle_result.confidence, f2_result.confidence) * 0.5,
+            method=OCRMethod.ENSEMBLE_V2,
+            raw_texts=paddle_result.raw_texts or f2_result.raw_texts,
+        )
+
+
 def _load_bbox_for_image(
     image_path: Union[str, Path],
 ) -> Optional[dict]:

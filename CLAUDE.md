@@ -18,15 +18,29 @@ We use Florence-2 as the primary OCR engine with Claude Vision as intelligent fa
 3. Claude Vision serves as fallback for low-confidence cases (< 0.85 threshold)
 4. Roboflow bounding boxes isolate individual billets from multi-billet surveillance frames
 
-### Why Not PaddleOCR?
-PaddleOCR was the original architecture choice (validated by Wei & Zhou, Feb 2025 for dot-matrix stamps), but benchmarking showed it achieves only 1.8-17.6% on our Roboflow surveillance images. Florence-2 significantly outperforms it on this dataset. PaddleOCR remains in the codebase for potential future use on high-res single-billet images.
+### F2+PaddleOCR Cross-Validation Ensemble (V10)
+The V10 pipeline combines Florence-2 multi-orientation + format validation with PaddleOCR+CLAHE cross-validation:
+1. Florence-2 tries 0° and 180° orientations on bbox crop (handles upside-down billets)
+2. Format validator extracts 5-digit heat from noisy F2 output (fixes extra-digit appending)
+3. PaddleOCR+CLAHE runs on same crop (handles heavy oxidation/scale)
+4. Cross-validation: if both agree → high confidence; if disagree → prefer PaddleOCR
+5. **Result: 77.0% heat char accuracy, 68.5% exact match** on 73-billet GT V2 dataset
 
-## Lessons Learned (from v7 iteration)
+### Why Not PaddleOCR Alone?
+PaddleOCR was the original architecture choice (validated by Wei & Zhou, Feb 2025 for dot-matrix stamps), but benchmarking on v7 showed only 1.8-17.6% on Roboflow surveillance images. On v9 per-billet crops, PaddleOCR+CLAHE achieves **65.2% heat char accuracy** — outperforming Florence-2 zero-shot (49.6%) on small crops but underperforming the F2+Paddle ensemble (77.0%).
+
+## Lessons Learned
 1. **Data quality > model complexity**: Fine-tuning Florence-2 on noisy VLM-generated labels (46% accurate) caused catastrophic forgetting (30.8% → 13.7%)
 2. **Resolution is critical**: 640x640 images with ~50-100px billet faces are too small for any OCR model. Upgraded to v9 (1280x640) for ~100-200px crops
 3. **No public billet OCR datasets exist**: Searched Kaggle, HuggingFace, Roboflow, GitHub, IEEE, Google Dataset Search, Chinese platforms — all 8+ papers worldwide use proprietary factory data
 4. **CLAHE hurts VLMs**: Preprocessing that helps traditional OCR (CLAHE) actually reduces VLM accuracy (46.8% vs 54.7% raw)
 5. **Manual GT verification is mandatory**: VLM-generated ground truth must be human-verified before training
+6. **Image-level train/val splits prevent data leakage**: Random sample-level splits leak same-frame crops into both splits
+7. **VLM-assisted review can incorrectly normalize real characters**: J→1 normalization was wrong (J is a real stamped character); upside-down images were misread
+8. **69 samples is too few for meaningful fine-tuning**: V2 LoRA showed no improvement over zero-shot (48% vs 49.6%)
+9. **Post-processing > model improvements**: Format validator fix alone gave +11.2% accuracy (49.6% → 60.8%) — more than any model change
+10. **Complementary engines beat individual ones**: F2+PaddleOCR ensemble (77.0%) exceeds both F2 alone (60.8%) and PaddleOCR alone (65.2%) because they fail on different images
+11. **Multi-orientation is critical for surveillance cameras**: 7/73 billets are upside-down; trying 180° rotation adds +9% to F2 accuracy
 
 ## Tech Stack
 - Python 3.11+ (use type hints everywhere)
@@ -61,6 +75,8 @@ PaddleOCR was the original architecture choice (validated by Wei & Zhou, Feb 202
 - All ground truth must be self-labeled (VLM-assisted + manual verification)
 - Current dataset: Roboflow v9, 1280x640 resolution, ~1551 images
 - 5 high-res reference images preserved in data/raw_original/
+- Human review completed 2026-02-25: J and Y are real stamped characters in some sequences
+- GT V2: 114 per-billet entries across 14 images (53 fully clean, 4 partial, 16 heat-only, 41 unreadable)
 
 ## Billet Number Format
 Based on the dataset, stamps follow these patterns:
@@ -73,10 +89,11 @@ Based on the dataset, stamps follow these patterns:
 Each surveillance image has ~9 billets. The V2 pipeline processes ALL bboxes per image:
 
 ### Ground Truth V2
-- Per-billet entries: `{"image": "xxx.jpg", "bbox_index": 0, "bbox": {...}, "heat_number": "60731", "sequence": "5282", "verified": false}`
+- Per-billet entries: `{"image": "xxx.jpg", "bbox_index": 0, "bbox": {...}, "heat_number": "60731", "sequence": "5282", "verified": true}`
 - Stored at `data/annotated/ground_truth_v2.json`
-- Crop images for human review at `data/gt_review/{stem}_bbox{N}.jpg`
-- ~270 entries for 30 images (9 billets x 30 images)
+- Crop images for human review at `data/gt_review/crops/billet_NN_cropNN.jpg`
+- 114 per-billet entries across 14 images (cleaned from original 130, removed 16 no-bbox entries)
+- 73 benchmarkable (readable heat), 69 trainable (readable heat + clean/heat-only seq)
 
 ### Single-Billet Failure Post-Mortem
 Previous approach had a fatal bbox mismatch bug:
@@ -108,7 +125,7 @@ Previous approach had a fatal bbox mismatch bug:
 
 ## Commands
 - `python -m pytest tests/ -v` → run all tests
-- `python scripts/benchmark.py --florence2 --bbox-crop --no-vlm --gt-v2` → per-billet benchmark (V2)
+- `python scripts/benchmark.py --florence2 --bbox-crop --no-vlm --gt-v2` → per-billet benchmark (V10 — F2+Paddle ensemble)
 - `python scripts/benchmark.py --florence2 --bbox-crop --no-vlm --gt-v2 --max-images 30` → quick per-billet test
 - `python scripts/benchmark.py --florence2 --bbox-crop --no-vlm` → legacy per-image benchmark
 - `python scripts/benchmark.py --florence2 --bbox-crop` → Florence-2 + VLM fallback benchmark
@@ -116,6 +133,8 @@ Previous approach had a fatal bbox mismatch bug:
 - `python scripts/parse_roboflow_annotations.py` → parse bbox annotations
 - `python scripts/extract_ground_truth.py --use-bbox --all-bboxes --max-images 30` → multi-billet GT extraction
 - `python scripts/extract_ground_truth.py --use-bbox --no-all-bboxes --max-images 30` → single-bbox GT (legacy)
+- `python scripts/prepare_florence2_training.py --gt-v2 --augment-factor 3 --target-size 768 --seed 42` → prepare fine-tuning data
+- `python scripts/finetune_florence2.py --data-dir data/training/florence2 --output-dir models/florence2_billet_lora_v2 --epochs 20 --lr 5e-5 --device cuda` → fine-tune Florence-2
 - `python -m uvicorn src.api.main:app --reload` → start API server
 
 ## Sub-Agent Routing Rules

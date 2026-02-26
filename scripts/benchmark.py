@@ -31,6 +31,7 @@ Diagnostic features (V3):
 No external accuracy libraries are used – Levenshtein distance is computed
 via a standard two-row DP algorithm.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -106,7 +107,9 @@ def _levenshtein(a: str, b: str) -> int:
     return prev[len(b)]
 
 
-def calculate_character_accuracy(predicted: Optional[str], actual: Optional[str]) -> float:
+def calculate_character_accuracy(
+    predicted: Optional[str], actual: Optional[str]
+) -> float:
     """Compute Levenshtein-based character-level accuracy.
 
     Accuracy = 1 - edit_distance / max(len(predicted), len(actual)).
@@ -288,7 +291,9 @@ def _run_image_benchmark(
 
     try:
         roi_preprocessed, roi_preproc_timing = preprocess_billet_image(
-            img_path, detect_roi=True, correct_perspective=True,
+            img_path,
+            detect_roi=True,
+            correct_perspective=True,
         )
     except Exception as exc:
         roi_preprocessed = None
@@ -322,7 +327,9 @@ def _run_image_benchmark(
         if preprocessed is not None:
             t0 = time.perf_counter()
             try:
-                pre_reading = run_paddle_pipeline(preprocessed, method=OCRMethod.PADDLE_PREPROCESSED)
+                pre_reading = run_paddle_pipeline(
+                    preprocessed, method=OCRMethod.PADDLE_PREPROCESSED
+                )
             except Exception as exc:
                 pre_reading = BilletReading(method=OCRMethod.PADDLE_PREPROCESSED)
                 result["errors"].append(f"Preprocessed OCR error: {exc}")
@@ -335,7 +342,9 @@ def _run_image_benchmark(
                 "confidence": pre_reading.confidence,
                 "preproc_time_ms": preproc_ms,
                 "ocr_time_ms": pre_time_ms,
-                "char_acc": calculate_character_accuracy(pre_reading.heat_number, gt_heat),
+                "char_acc": calculate_character_accuracy(
+                    pre_reading.heat_number, gt_heat
+                ),
                 "word_acc": calculate_word_accuracy(pre_reading.heat_number, gt_heat),
             }
 
@@ -362,7 +371,9 @@ def _run_image_benchmark(
                 "ocr_time_ms": roi_ocr_ms,
                 "roi_ms": roi_preproc_timing.get("roi_ms", 0.0),
                 "perspective_ms": roi_preproc_timing.get("perspective_ms", 0.0),
-                "char_acc": calculate_character_accuracy(roi_reading.heat_number, gt_heat),
+                "char_acc": calculate_character_accuracy(
+                    roi_reading.heat_number, gt_heat
+                ),
                 "word_acc": calculate_word_accuracy(roi_reading.heat_number, gt_heat),
             }
         else:
@@ -403,7 +414,11 @@ def _run_image_benchmark(
                 try:
                     from src.ocr.vlm_reader import read_billet_with_vlm
 
-                    vlm_input = roi_preprocessed if roi_preprocessed is not None else preprocessed
+                    vlm_input = (
+                        roi_preprocessed
+                        if roi_preprocessed is not None
+                        else preprocessed
+                    )
                     t0 = time.perf_counter()
                     vlm_reading = read_billet_with_vlm(
                         vlm_input if vlm_input is not None else img_path,
@@ -417,8 +432,12 @@ def _run_image_benchmark(
                         "sequence": vlm_reading.sequence,
                         "confidence": vlm_reading.confidence,
                         "ocr_time_ms": vlm_time_ms,
-                        "char_acc": calculate_character_accuracy(vlm_reading.heat_number, gt_heat),
-                        "word_acc": calculate_word_accuracy(vlm_reading.heat_number, gt_heat),
+                        "char_acc": calculate_character_accuracy(
+                            vlm_reading.heat_number, gt_heat
+                        ),
+                        "word_acc": calculate_word_accuracy(
+                            vlm_reading.heat_number, gt_heat
+                        ),
                         "triggered": True,
                     }
                 except Exception as exc:
@@ -448,7 +467,9 @@ def _run_image_benchmark(
             try:
                 from src.ocr.vlm_reader import read_billet_with_vlm
 
-                vlm_input = roi_preprocessed if roi_preprocessed is not None else preprocessed
+                vlm_input = (
+                    roi_preprocessed if roi_preprocessed is not None else preprocessed
+                )
                 t0 = time.perf_counter()
                 vlm_only_reading = read_billet_with_vlm(
                     vlm_input if vlm_input is not None else img_path,
@@ -462,8 +483,12 @@ def _run_image_benchmark(
                     "sequence": vlm_only_reading.sequence,
                     "confidence": vlm_only_reading.confidence,
                     "ocr_time_ms": vlm_only_time_ms,
-                    "char_acc": calculate_character_accuracy(vlm_only_reading.heat_number, gt_heat),
-                    "word_acc": calculate_word_accuracy(vlm_only_reading.heat_number, gt_heat),
+                    "char_acc": calculate_character_accuracy(
+                        vlm_only_reading.heat_number, gt_heat
+                    ),
+                    "word_acc": calculate_word_accuracy(
+                        vlm_only_reading.heat_number, gt_heat
+                    ),
                 }
             except Exception as exc:
                 result["errors"].append(f"VLM-only error: {exc}")
@@ -513,8 +538,12 @@ def _run_image_benchmark(
                     "sequence": vlm_raw_reading.sequence,
                     "confidence": vlm_raw_reading.confidence,
                     "ocr_time_ms": vlm_raw_time_ms,
-                    "char_acc": calculate_character_accuracy(vlm_raw_reading.heat_number, gt_heat),
-                    "word_acc": calculate_word_accuracy(vlm_raw_reading.heat_number, gt_heat),
+                    "char_acc": calculate_character_accuracy(
+                        vlm_raw_reading.heat_number, gt_heat
+                    ),
+                    "word_acc": calculate_word_accuracy(
+                        vlm_raw_reading.heat_number, gt_heat
+                    ),
                 }
             except Exception as exc:
                 result["errors"].append(f"VLM-raw error: {exc}")
@@ -563,8 +592,12 @@ def _run_image_benchmark(
                     "sequence": vlm_crop_reading.sequence,
                     "confidence": vlm_crop_reading.confidence,
                     "ocr_time_ms": vlm_crop_time_ms,
-                    "char_acc": calculate_character_accuracy(vlm_crop_reading.heat_number, gt_heat),
-                    "word_acc": calculate_word_accuracy(vlm_crop_reading.heat_number, gt_heat),
+                    "char_acc": calculate_character_accuracy(
+                        vlm_crop_reading.heat_number, gt_heat
+                    ),
+                    "word_acc": calculate_word_accuracy(
+                        vlm_crop_reading.heat_number, gt_heat
+                    ),
                 }
             except Exception as exc:
                 result["errors"].append(f"VLM-center-crop error: {exc}")
@@ -607,8 +640,12 @@ def _run_image_benchmark(
                 "confidence": f2_raw_reading.confidence,
                 "ocr_time_ms": f2_raw_time_ms,
                 "raw_texts": f2_raw_reading.raw_texts,
-                "char_acc": calculate_character_accuracy(f2_raw_reading.heat_number, gt_heat),
-                "word_acc": calculate_word_accuracy(f2_raw_reading.heat_number, gt_heat),
+                "char_acc": calculate_character_accuracy(
+                    f2_raw_reading.heat_number, gt_heat
+                ),
+                "word_acc": calculate_word_accuracy(
+                    f2_raw_reading.heat_number, gt_heat
+                ),
             }
         except Exception as exc:
             result["errors"].append(f"Florence-2 raw error: {exc}")
@@ -646,8 +683,12 @@ def _run_image_benchmark(
                 "confidence": f2_crop_reading.confidence,
                 "ocr_time_ms": f2_crop_time_ms,
                 "raw_texts": f2_crop_reading.raw_texts,
-                "char_acc": calculate_character_accuracy(f2_crop_reading.heat_number, gt_heat),
-                "word_acc": calculate_word_accuracy(f2_crop_reading.heat_number, gt_heat),
+                "char_acc": calculate_character_accuracy(
+                    f2_crop_reading.heat_number, gt_heat
+                ),
+                "word_acc": calculate_word_accuracy(
+                    f2_crop_reading.heat_number, gt_heat
+                ),
             }
         except Exception as exc:
             result["errors"].append(f"Florence-2 crop error: {exc}")
@@ -700,9 +741,14 @@ def _run_image_benchmark(
                 f2_bbox_time_ms = (time.perf_counter() - t0) * 1000
 
                 # Apply format validation to fix multi-billet contamination
-                raw_output = " ".join(f2_bbox_reading.raw_texts) if f2_bbox_reading.raw_texts else ""
+                raw_output = (
+                    " ".join(f2_bbox_reading.raw_texts)
+                    if f2_bbox_reading.raw_texts
+                    else ""
+                )
                 validated_heat = validate_florence2_output(
-                    raw_output, f2_bbox_reading.heat_number,
+                    raw_output,
+                    f2_bbox_reading.heat_number,
                 )
 
                 result["methods"]["florence2_bbox_crop"] = {
@@ -719,16 +765,22 @@ def _run_image_benchmark(
             except Exception as exc:
                 result["errors"].append(f"Florence-2 bbox-crop error: {exc}")
                 result["methods"]["florence2_bbox_crop"] = {
-                    "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                    "heat_number": None,
+                    "char_acc": 0.0,
+                    "word_acc": 0.0,
                 }
         else:
             result["methods"]["florence2_bbox_crop"] = {
-                "heat_number": None, "char_acc": None, "word_acc": None,
+                "heat_number": None,
+                "char_acc": None,
+                "word_acc": None,
                 "skipped": "No bbox annotation for this image",
             }
     else:
         result["methods"]["florence2_bbox_crop"] = {
-            "heat_number": None, "char_acc": None, "word_acc": None,
+            "heat_number": None,
+            "char_acc": None,
+            "word_acc": None,
         }
 
     # ------------------------------------------------------------------
@@ -769,9 +821,12 @@ def _run_image_benchmark(
                 f2_sr_time_ms = (time.perf_counter() - t0) * 1000
 
                 # Apply format validation
-                raw_output = " ".join(f2_sr_reading.raw_texts) if f2_sr_reading.raw_texts else ""
+                raw_output = (
+                    " ".join(f2_sr_reading.raw_texts) if f2_sr_reading.raw_texts else ""
+                )
                 validated_heat = validate_florence2_output(
-                    raw_output, f2_sr_reading.heat_number,
+                    raw_output,
+                    f2_sr_reading.heat_number,
                 )
 
                 crop_h, crop_w = bbox_cropped.shape[:2]
@@ -791,16 +846,22 @@ def _run_image_benchmark(
             except Exception as exc:
                 result["errors"].append(f"Florence-2 bbox-superres error: {exc}")
                 result["methods"]["florence2_bbox_superres"] = {
-                    "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                    "heat_number": None,
+                    "char_acc": 0.0,
+                    "word_acc": 0.0,
                 }
         else:
             result["methods"]["florence2_bbox_superres"] = {
-                "heat_number": None, "char_acc": None, "word_acc": None,
+                "heat_number": None,
+                "char_acc": None,
+                "word_acc": None,
                 "skipped": "No bbox annotation for this image",
             }
     else:
         result["methods"]["florence2_bbox_superres"] = {
-            "heat_number": None, "char_acc": None, "word_acc": None,
+            "heat_number": None,
+            "char_acc": None,
+            "word_acc": None,
         }
 
     # ------------------------------------------------------------------
@@ -817,6 +878,7 @@ def _run_image_benchmark(
         if raw_output or parsed_heat:
             try:
                 from src.postprocess.format_validator import validate_florence2_output
+
                 validated_heat = validate_florence2_output(raw_output, parsed_heat)
 
                 result["methods"]["florence2_raw_validated"] = {
@@ -831,15 +893,21 @@ def _run_image_benchmark(
             except Exception as exc:
                 result["errors"].append(f"Florence-2 raw validated error: {exc}")
                 result["methods"]["florence2_raw_validated"] = {
-                    "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                    "heat_number": None,
+                    "char_acc": 0.0,
+                    "word_acc": 0.0,
                 }
         else:
             result["methods"]["florence2_raw_validated"] = {
-                "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                "heat_number": None,
+                "char_acc": 0.0,
+                "word_acc": 0.0,
             }
     else:
         result["methods"]["florence2_raw_validated"] = {
-            "heat_number": None, "char_acc": None, "word_acc": None,
+            "heat_number": None,
+            "char_acc": None,
+            "word_acc": None,
         }
 
     # ------------------------------------------------------------------
@@ -854,7 +922,9 @@ def _run_image_benchmark(
                 t0 = time.perf_counter()
                 ensemble_reading = run_ensemble_pipeline(
                     img_path,
-                    preprocessed=roi_preprocessed if roi_preprocessed is not None else preprocessed,
+                    preprocessed=roi_preprocessed
+                    if roi_preprocessed is not None
+                    else preprocessed,
                 )
                 ensemble_time_ms = (time.perf_counter() - t0) * 1000
 
@@ -865,8 +935,12 @@ def _run_image_benchmark(
                     "confidence": ensemble_reading.confidence,
                     "method": ensemble_reading.method.value,
                     "ocr_time_ms": ensemble_time_ms,
-                    "char_acc": calculate_character_accuracy(ensemble_reading.heat_number, gt_heat),
-                    "word_acc": calculate_word_accuracy(ensemble_reading.heat_number, gt_heat),
+                    "char_acc": calculate_character_accuracy(
+                        ensemble_reading.heat_number, gt_heat
+                    ),
+                    "word_acc": calculate_word_accuracy(
+                        ensemble_reading.heat_number, gt_heat
+                    ),
                 }
             except Exception as exc:
                 result["errors"].append(f"Ensemble error: {exc}")
@@ -901,11 +975,13 @@ def _run_image_benchmark(
                 bboxes = bbox_annotations[img_name]
                 bbox = max(bboxes, key=lambda b: b["width"] * b["height"])
                 bbox_preprocessed, bbox_timing = preprocess_billet_image(
-                    img_path, roi_bbox=bbox,
+                    img_path,
+                    roi_bbox=bbox,
                 )
                 t0 = time.perf_counter()
                 bbox_reading = run_paddle_pipeline(
-                    bbox_preprocessed, method=OCRMethod.PADDLE_BBOX_CROP,
+                    bbox_preprocessed,
+                    method=OCRMethod.PADDLE_BBOX_CROP,
                 )
                 bbox_ocr_ms = (time.perf_counter() - t0) * 1000
 
@@ -916,22 +992,32 @@ def _run_image_benchmark(
                     "confidence": bbox_reading.confidence,
                     "preproc_time_ms": bbox_timing["total_ms"],
                     "ocr_time_ms": bbox_ocr_ms,
-                    "char_acc": calculate_character_accuracy(bbox_reading.heat_number, gt_heat),
-                    "word_acc": calculate_word_accuracy(bbox_reading.heat_number, gt_heat),
+                    "char_acc": calculate_character_accuracy(
+                        bbox_reading.heat_number, gt_heat
+                    ),
+                    "word_acc": calculate_word_accuracy(
+                        bbox_reading.heat_number, gt_heat
+                    ),
                 }
             except Exception as exc:
                 result["errors"].append(f"Bbox-crop error: {exc}")
                 result["methods"]["bbox_crop"] = {
-                    "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
+                    "heat_number": None,
+                    "char_acc": 0.0,
+                    "word_acc": 0.0,
                 }
         else:
             result["methods"]["bbox_crop"] = {
-                "heat_number": None, "char_acc": None, "word_acc": None,
+                "heat_number": None,
+                "char_acc": None,
+                "word_acc": None,
                 "skipped": "No bbox annotation for this image",
             }
     else:
         result["methods"]["bbox_crop"] = {
-            "heat_number": None, "char_acc": None, "word_acc": None,
+            "heat_number": None,
+            "char_acc": None,
+            "word_acc": None,
         }
 
     # ------------------------------------------------------------------
@@ -968,18 +1054,26 @@ def _run_image_benchmark(
                 "tier_label": v2_result.tier_label,
                 "vlm_called": v2_result.vlm_called,
                 "tier_times_ms": v2_result.tier_times_ms,
-                "char_acc": calculate_character_accuracy(v2_reading.heat_number, gt_heat),
+                "char_acc": calculate_character_accuracy(
+                    v2_reading.heat_number, gt_heat
+                ),
                 "word_acc": calculate_word_accuracy(v2_reading.heat_number, gt_heat),
             }
         except Exception as exc:
             result["errors"].append(f"Ensemble V2 error: {exc}")
             result["methods"]["ensemble_v2"] = {
-                "heat_number": None, "char_acc": 0.0, "word_acc": 0.0,
-                "tier": 0, "tier_label": "error", "vlm_called": False,
+                "heat_number": None,
+                "char_acc": 0.0,
+                "word_acc": 0.0,
+                "tier": 0,
+                "tier_label": "error",
+                "vlm_called": False,
             }
     else:
         result["methods"]["ensemble_v2"] = {
-            "heat_number": None, "char_acc": None, "word_acc": None,
+            "heat_number": None,
+            "char_acc": None,
+            "word_acc": None,
         }
 
     return result
@@ -1074,7 +1168,9 @@ def _run_billet_benchmark(
             f2_time_ms = (time.perf_counter() - t0) * 1000
 
             raw_output = " ".join(f2_reading.raw_texts) if f2_reading.raw_texts else ""
-            validated_heat = validate_florence2_output(raw_output, f2_reading.heat_number)
+            validated_heat = validate_florence2_output(
+                raw_output, f2_reading.heat_number
+            )
 
             result["methods"]["florence2_bbox_crop"] = {
                 "heat_number": validated_heat,
@@ -1085,16 +1181,24 @@ def _run_billet_benchmark(
                 "crop_size": f"{bbox_crop.shape[1]}x{bbox_crop.shape[0]}",
                 "char_acc_heat": calculate_character_accuracy(validated_heat, gt_heat),
                 "word_acc_heat": calculate_word_accuracy(validated_heat, gt_heat),
-                "char_acc_seq": calculate_character_accuracy(f2_reading.sequence, gt_seq) if gt_seq else None,
+                "char_acc_seq": calculate_character_accuracy(
+                    f2_reading.sequence, gt_seq
+                )
+                if gt_seq and "?" not in gt_seq
+                else None,
             }
         except Exception as exc:
             result["errors"].append(f"Florence-2 bbox-crop error: {exc}")
             result["methods"]["florence2_bbox_crop"] = {
-                "heat_number": None, "char_acc_heat": 0.0, "word_acc_heat": 0.0,
+                "heat_number": None,
+                "char_acc_heat": 0.0,
+                "word_acc_heat": 0.0,
             }
     else:
         result["methods"]["florence2_bbox_crop"] = {
-            "heat_number": None, "char_acc_heat": None, "word_acc_heat": None,
+            "heat_number": None,
+            "char_acc_heat": None,
+            "word_acc_heat": None,
         }
 
     # ------------------------------------------------------------------
@@ -1112,8 +1216,12 @@ def _run_billet_benchmark(
             f2_sr_reading = read_billet_with_florence2(bbox_upscaled)
             f2_sr_time_ms = (time.perf_counter() - t0) * 1000
 
-            raw_output = " ".join(f2_sr_reading.raw_texts) if f2_sr_reading.raw_texts else ""
-            validated_heat = validate_florence2_output(raw_output, f2_sr_reading.heat_number)
+            raw_output = (
+                " ".join(f2_sr_reading.raw_texts) if f2_sr_reading.raw_texts else ""
+            )
+            validated_heat = validate_florence2_output(
+                raw_output, f2_sr_reading.heat_number
+            )
 
             result["methods"]["florence2_bbox_superres"] = {
                 "heat_number": validated_heat,
@@ -1125,16 +1233,24 @@ def _run_billet_benchmark(
                 "upscaled_size": f"{bbox_upscaled.shape[1]}x{bbox_upscaled.shape[0]}",
                 "char_acc_heat": calculate_character_accuracy(validated_heat, gt_heat),
                 "word_acc_heat": calculate_word_accuracy(validated_heat, gt_heat),
-                "char_acc_seq": calculate_character_accuracy(f2_sr_reading.sequence, gt_seq) if gt_seq else None,
+                "char_acc_seq": calculate_character_accuracy(
+                    f2_sr_reading.sequence, gt_seq
+                )
+                if gt_seq and "?" not in gt_seq
+                else None,
             }
         except Exception as exc:
             result["errors"].append(f"Florence-2 bbox-superres error: {exc}")
             result["methods"]["florence2_bbox_superres"] = {
-                "heat_number": None, "char_acc_heat": 0.0, "word_acc_heat": 0.0,
+                "heat_number": None,
+                "char_acc_heat": 0.0,
+                "word_acc_heat": 0.0,
             }
     else:
         result["methods"]["florence2_bbox_superres"] = {
-            "heat_number": None, "char_acc_heat": None, "word_acc_heat": None,
+            "heat_number": None,
+            "char_acc_heat": None,
+            "word_acc_heat": None,
         }
 
     # ------------------------------------------------------------------
@@ -1147,7 +1263,8 @@ def _run_billet_benchmark(
         bbox_preprocessed, bbox_timing = preprocess_billet_image(bbox_crop)
         t0 = time.perf_counter()
         paddle_reading = run_paddle_pipeline(
-            bbox_preprocessed, method=OCRMethod.PADDLE_BBOX_CROP,
+            bbox_preprocessed,
+            method=OCRMethod.PADDLE_BBOX_CROP,
         )
         paddle_ms = (time.perf_counter() - t0) * 1000
 
@@ -1156,13 +1273,19 @@ def _run_billet_benchmark(
             "sequence": paddle_reading.sequence,
             "confidence": paddle_reading.confidence,
             "ocr_time_ms": paddle_ms,
-            "char_acc_heat": calculate_character_accuracy(paddle_reading.heat_number, gt_heat),
-            "word_acc_heat": calculate_word_accuracy(paddle_reading.heat_number, gt_heat),
+            "char_acc_heat": calculate_character_accuracy(
+                paddle_reading.heat_number, gt_heat
+            ),
+            "word_acc_heat": calculate_word_accuracy(
+                paddle_reading.heat_number, gt_heat
+            ),
         }
     except Exception as exc:
         result["errors"].append(f"PaddleOCR bbox-crop error: {exc}")
         result["methods"]["paddle_bbox_crop"] = {
-            "heat_number": None, "char_acc_heat": 0.0, "word_acc_heat": 0.0,
+            "heat_number": None,
+            "char_acc_heat": 0.0,
+            "word_acc_heat": 0.0,
         }
 
     # ------------------------------------------------------------------
@@ -1183,23 +1306,146 @@ def _run_billet_benchmark(
                     "sequence": vlm_reading.sequence,
                     "confidence": vlm_reading.confidence,
                     "ocr_time_ms": vlm_ms,
-                    "char_acc_heat": calculate_character_accuracy(vlm_reading.heat_number, gt_heat),
-                    "word_acc_heat": calculate_word_accuracy(vlm_reading.heat_number, gt_heat),
-                    "char_acc_seq": calculate_character_accuracy(vlm_reading.sequence, gt_seq) if gt_seq else None,
+                    "char_acc_heat": calculate_character_accuracy(
+                        vlm_reading.heat_number, gt_heat
+                    ),
+                    "word_acc_heat": calculate_word_accuracy(
+                        vlm_reading.heat_number, gt_heat
+                    ),
+                    "char_acc_seq": calculate_character_accuracy(
+                        vlm_reading.sequence, gt_seq
+                    )
+                    if gt_seq and "?" not in gt_seq
+                    else None,
                 }
             except Exception as exc:
                 result["errors"].append(f"VLM bbox-crop error: {exc}")
                 result["methods"]["vlm_bbox_crop"] = {
-                    "heat_number": None, "char_acc_heat": 0.0, "word_acc_heat": 0.0,
+                    "heat_number": None,
+                    "char_acc_heat": 0.0,
+                    "word_acc_heat": 0.0,
                 }
         else:
             result["methods"]["vlm_bbox_crop"] = {
-                "heat_number": None, "char_acc_heat": 0.0, "word_acc_heat": 0.0,
+                "heat_number": None,
+                "char_acc_heat": 0.0,
+                "word_acc_heat": 0.0,
                 "skipped": "No ANTHROPIC_API_KEY",
             }
     else:
         result["methods"]["vlm_bbox_crop"] = {
-            "heat_number": None, "char_acc_heat": None, "word_acc_heat": None,
+            "heat_number": None,
+            "char_acc_heat": None,
+            "word_acc_heat": None,
+        }
+
+    # ------------------------------------------------------------------
+    # Stage 5: Florence-2 with multi-orientation (0° + 180°)
+    # ------------------------------------------------------------------
+    if use_florence2:
+        try:
+            from src.ocr.florence2_reader import read_billet_with_orientation
+            from src.postprocess.format_validator import validate_florence2_output
+
+            t0 = time.perf_counter()
+            f2_orient_reading = read_billet_with_orientation(bbox_crop)
+            f2_orient_ms = (time.perf_counter() - t0) * 1000
+
+            raw_output = (
+                " ".join(f2_orient_reading.raw_texts)
+                if f2_orient_reading.raw_texts
+                else ""
+            )
+            validated_heat = validate_florence2_output(
+                raw_output, f2_orient_reading.heat_number
+            )
+
+            result["methods"]["florence2_orient"] = {
+                "heat_number": validated_heat,
+                "sequence": f2_orient_reading.sequence,
+                "confidence": f2_orient_reading.confidence,
+                "ocr_time_ms": f2_orient_ms,
+                "raw_texts": f2_orient_reading.raw_texts,
+                "char_acc_heat": calculate_character_accuracy(validated_heat, gt_heat),
+                "word_acc_heat": calculate_word_accuracy(validated_heat, gt_heat),
+                "char_acc_seq": calculate_character_accuracy(
+                    f2_orient_reading.sequence, gt_seq
+                )
+                if gt_seq and "?" not in gt_seq
+                else None,
+            }
+        except Exception as exc:
+            result["errors"].append(f"Florence-2 orientation error: {exc}")
+            result["methods"]["florence2_orient"] = {
+                "heat_number": None,
+                "char_acc_heat": 0.0,
+                "word_acc_heat": 0.0,
+            }
+    else:
+        result["methods"]["florence2_orient"] = {
+            "heat_number": None,
+            "char_acc_heat": None,
+            "word_acc_heat": None,
+        }
+
+    # ------------------------------------------------------------------
+    # Stage 6: F2+PaddleOCR cross-validation ensemble
+    # ------------------------------------------------------------------
+    if use_florence2:
+        try:
+            from src.ocr.ensemble import cross_validate_f2_paddle
+            from src.postprocess.format_validator import validate_florence2_output
+
+            # Use the multi-orient F2 result (best of 0°/180°) for cross-validation
+            f2_for_xval = result["methods"].get("florence2_orient", {})
+            paddle_for_xval = result["methods"].get("paddle_bbox_crop", {})
+
+            # Reconstruct BilletReading objects for cross-validation
+            f2_reading_xval = BilletReading(
+                heat_number=f2_for_xval.get("heat_number"),
+                sequence=f2_for_xval.get("sequence"),
+                confidence=f2_for_xval.get("confidence", 0.0),
+                method=OCRMethod.VLM_FLORENCE2,
+                raw_texts=f2_for_xval.get("raw_texts", []),
+            )
+            paddle_reading_xval = BilletReading(
+                heat_number=paddle_for_xval.get("heat_number"),
+                sequence=paddle_for_xval.get("sequence"),
+                confidence=paddle_for_xval.get("confidence", 0.0),
+                method=OCRMethod.PADDLE_BBOX_CROP,
+                raw_texts=paddle_for_xval.get("raw_texts", []),
+            )
+
+            xval_result = cross_validate_f2_paddle(f2_reading_xval, paddle_reading_xval)
+
+            result["methods"]["f2_paddle_ensemble"] = {
+                "heat_number": xval_result.heat_number,
+                "sequence": xval_result.sequence,
+                "confidence": xval_result.confidence,
+                "char_acc_heat": calculate_character_accuracy(
+                    xval_result.heat_number, gt_heat
+                ),
+                "word_acc_heat": calculate_word_accuracy(
+                    xval_result.heat_number, gt_heat
+                ),
+                "char_acc_seq": calculate_character_accuracy(
+                    xval_result.sequence, gt_seq
+                )
+                if gt_seq and "?" not in gt_seq
+                else None,
+            }
+        except Exception as exc:
+            result["errors"].append(f"F2+Paddle ensemble error: {exc}")
+            result["methods"]["f2_paddle_ensemble"] = {
+                "heat_number": None,
+                "char_acc_heat": 0.0,
+                "word_acc_heat": 0.0,
+            }
+    else:
+        result["methods"]["f2_paddle_ensemble"] = {
+            "heat_number": None,
+            "char_acc_heat": None,
+            "word_acc_heat": None,
         }
 
     return result
@@ -1228,19 +1474,27 @@ def generate_billet_markdown_report(
 
     lines.append("# Billet OCR Benchmark Report — Per-Billet (V2)\n")
     lines.append(f"**Generated:** {timestamp}  ")
-    lines.append(f"**Billets evaluated:** {len(all_results)} (across {unique_images} images)  ")
+    lines.append(
+        f"**Billets evaluated:** {len(all_results)} (across {unique_images} images)  "
+    )
     lines.append(f"**VLM model:** `{vlm_model}`  ")
     lines.append(f"**Prompt version:** V{VLM_PROMPT_VERSION}  \n")
 
     # Method keys for per-billet
     method_keys = [
-        "florence2_bbox_crop", "florence2_bbox_superres",
-        "paddle_bbox_crop", "vlm_bbox_crop",
+        "florence2_bbox_crop",
+        "florence2_bbox_superres",
+        "florence2_orient",
+        "paddle_bbox_crop",
+        "f2_paddle_ensemble",
+        "vlm_bbox_crop",
     ]
     method_labels = {
         "florence2_bbox_crop": "F2 Bbox Crop",
         "florence2_bbox_superres": "F2 Bbox+SR",
+        "florence2_orient": "F2 Multi-Orient",
         "paddle_bbox_crop": "Paddle Bbox",
+        "f2_paddle_ensemble": "F2+Paddle Ensemble",
         "vlm_bbox_crop": "VLM Bbox Crop",
     }
 
@@ -1264,17 +1518,22 @@ def generate_billet_markdown_report(
 
     # Summary table
     lines.append("## Summary\n")
-    lines.append("| Method | Avg Heat Char Acc | Avg Heat Exact | Avg Seq Char Acc | N |")
-    lines.append("|--------|-------------------|----------------|------------------|---|")
+    lines.append(
+        "| Method | Avg Heat Char Acc | Avg Heat Exact | Avg Seq Char Acc | N Heat | N Seq |"
+    )
+    lines.append(
+        "|--------|-------------------|----------------|------------------|--------|-------|"
+    )
     for mk in method_keys:
         label = method_labels.get(mk, mk)
         avg_char = _avg(method_heat_accs[mk])
         avg_word = _avg(method_word_accs[mk])
         avg_seq = _avg(method_seq_accs[mk])
-        n = len(method_heat_accs[mk])
+        n_heat = len(method_heat_accs[mk])
+        n_seq = len(method_seq_accs[mk])
         lines.append(
             f"| {label} | {_format_acc(avg_char)} | "
-            f"{_format_acc(avg_word)} | {_format_acc(avg_seq)} | {n} |"
+            f"{_format_acc(avg_word)} | {_format_acc(avg_seq)} | {n_heat} | {n_seq} |"
         )
     lines.append("")
 
@@ -1282,15 +1541,16 @@ def generate_billet_markdown_report(
     lines.append("## Per-Billet Breakdown\n")
     lines.append(
         "| Image | Bbox# | GT Heat | GT Seq | F2 Heat | F2 Acc | "
-        "F2+SR Heat | F2+SR Acc | Paddle | VLM |"
+        "F2+SR Acc | F2 Orient | Paddle | Ensemble | VLM |"
     )
     lines.append(
         "|-------|-------|---------|--------|---------|--------|"
-        "------------|-----------|--------|-----|"
+        "-----------|-----------|--------|----------|-----|"
     )
 
     # Group by image
     from itertools import groupby
+
     sorted_results = sorted(all_results, key=lambda r: (r["image"], r["bbox_index"]))
     for _img, group in groupby(sorted_results, key=lambda r: r["image"]):
         for res in group:
@@ -1302,14 +1562,18 @@ def generate_billet_markdown_report(
 
             f2 = res["methods"].get("florence2_bbox_crop", {})
             f2sr = res["methods"].get("florence2_bbox_superres", {})
+            f2o = res["methods"].get("florence2_orient", {})
             pad = res["methods"].get("paddle_bbox_crop", {})
+            ens = res["methods"].get("f2_paddle_ensemble", {})
             vlm = res["methods"].get("vlm_bbox_crop", {})
 
             lines.append(
                 f"| {img_short} | {bbox_idx} | {gt_h} | {gt_s} | "
                 f"{f2.get('heat_number') or '-'} | {_format_acc(f2.get('char_acc_heat'))} | "
-                f"{f2sr.get('heat_number') or '-'} | {_format_acc(f2sr.get('char_acc_heat'))} | "
+                f"{_format_acc(f2sr.get('char_acc_heat'))} | "
+                f"{_format_acc(f2o.get('char_acc_heat'))} | "
                 f"{_format_acc(pad.get('char_acc_heat'))} | "
+                f"{_format_acc(ens.get('char_acc_heat'))} | "
                 f"{_format_acc(vlm.get('char_acc_heat'))} |"
             )
 
@@ -1318,7 +1582,8 @@ def generate_billet_markdown_report(
     # Errors
     all_errors = [
         (r["image"], r["bbox_index"], e)
-        for r in all_results for e in r.get("errors", [])
+        for r in all_results
+        for e in r.get("errors", [])
     ]
     if all_errors:
         lines.append("## Errors\n")
@@ -1440,12 +1705,22 @@ def generate_markdown_report(
     # Aggregate statistics
     # ------------------------------------------------------------------
     method_keys = [
-        "raw", "preprocessed", "roi_preprocessed", "postprocessed",
+        "raw",
+        "preprocessed",
+        "roi_preprocessed",
+        "postprocessed",
         "bbox_crop",
-        "vlm", "vlm_only", "vlm_raw", "vlm_center_crop",
-        "florence2_raw", "florence2_crop", "florence2_bbox_crop",
-        "florence2_bbox_superres", "florence2_raw_validated",
-        "ensemble", "ensemble_v2",
+        "vlm",
+        "vlm_only",
+        "vlm_raw",
+        "vlm_center_crop",
+        "florence2_raw",
+        "florence2_crop",
+        "florence2_bbox_crop",
+        "florence2_bbox_superres",
+        "florence2_raw_validated",
+        "ensemble",
+        "ensemble_v2",
     ]
 
     # Collect per-method accuracy lists (skip None values for VLM not triggered).
@@ -1493,16 +1768,15 @@ def generate_markdown_report(
     # ------------------------------------------------------------------
     vlm_methods = ["vlm_only", "vlm_raw", "vlm_center_crop"]
     florence2_methods = [
-        "florence2_raw", "florence2_crop", "florence2_bbox_crop",
-        "florence2_bbox_superres", "florence2_raw_validated",
+        "florence2_raw",
+        "florence2_crop",
+        "florence2_bbox_crop",
+        "florence2_bbox_superres",
+        "florence2_raw_validated",
     ]
     all_vlm_methods = vlm_methods + florence2_methods
-    has_vlm_data = any(
-        method_char_accs.get(mk) for mk in all_vlm_methods
-    )
-    has_florence2_data = any(
-        method_char_accs.get(mk) for mk in florence2_methods
-    )
+    has_vlm_data = any(method_char_accs.get(mk) for mk in all_vlm_methods)
+    has_florence2_data = any(method_char_accs.get(mk) for mk in florence2_methods)
     if has_vlm_data:
         lines.append("## VLM A/B Comparison\n")
         header = "| Image | GT Heat | VLM Preprocessed | VLM Raw | VLM Center Crop |"
@@ -1553,8 +1827,10 @@ def generate_markdown_report(
     # ------------------------------------------------------------------
     if has_vlm_data:
         lines.append("## VLM Diagnostic Diffs\n")
-        lines.append("Character-level comparison: `.` = match, `X` = mismatch, "
-                      "`+` = extra, `-` = missing\n")
+        lines.append(
+            "Character-level comparison: `.` = match, `X` = mismatch, "
+            "`+` = extra, `-` = missing\n"
+        )
         lines.append("| Image | GT Heat | Method | Predicted | Diff | Char Acc |")
         lines.append("|-------|---------|--------|-----------|------|----------|")
         diff_methods = vlm_methods + (florence2_methods if has_florence2_data else [])
@@ -1582,7 +1858,9 @@ def generate_markdown_report(
         lines.append("## Character Confusions (VLM)\n")
         # Aggregate confusions across all VLM methods.
         all_confusions: dict[tuple[str, str], int] = {}
-        confusion_methods = vlm_methods + (florence2_methods if has_florence2_data else [])
+        confusion_methods = vlm_methods + (
+            florence2_methods if has_florence2_data else []
+        )
         for mk in confusion_methods:
             conf = _collect_confusions(all_results, mk)
             for pair, count in conf.items():
@@ -1633,13 +1911,13 @@ def generate_markdown_report(
                 f"{tier_n} | {tier_l} | {vlm_c} | {t_ms} |"
             )
         total_v2 = sum(
-            1 for r in all_results
+            1
+            for r in all_results
             if r["methods"].get("ensemble_v2", {}).get("char_acc") is not None
         )
         vlm_rate = vlm_call_count / total_v2 * 100 if total_v2 > 0 else 0
         lines.append(
-            f"\n**VLM fallback rate:** {vlm_call_count}/{total_v2} "
-            f"({vlm_rate:.0f}%)\n"
+            f"\n**VLM fallback rate:** {vlm_call_count}/{total_v2} ({vlm_rate:.0f}%)\n"
         )
 
     # ------------------------------------------------------------------
@@ -1717,9 +1995,7 @@ def generate_markdown_report(
     # ------------------------------------------------------------------
     # Errors section (if any)
     # ------------------------------------------------------------------
-    all_errors = [
-        (r["image"], e) for r in all_results for e in r.get("errors", [])
-    ]
+    all_errors = [(r["image"], e) for r in all_results for e in r.get("errors", [])]
     if all_errors:
         lines.append("## Errors\n")
         for img, err in all_errors:
@@ -1831,27 +2107,38 @@ def main() -> None:
     # ------------------------------------------------------------------
     if use_gt_v2:
         from src.config import GT_OUTPUT_PATH
+
         gt_v2_path = GT_OUTPUT_PATH
         if not gt_v2_path.exists():
             print(f"ERROR: GT V2 file not found: {gt_v2_path}", file=sys.stderr)
-            print("Run scripts/extract_ground_truth.py --use-bbox --all-bboxes first.", file=sys.stderr)
+            print(
+                "Run scripts/extract_ground_truth.py --use-bbox --all-bboxes first.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         with open(gt_v2_path, encoding="utf-8") as fh:
             gt_v2_all: list[dict] = json.load(fh)
 
-        # Filter entries with valid heat numbers and bbox
+        # Filter entries with valid heat numbers and bbox (skip ????? entries)
         gt_v2 = [
-            e for e in gt_v2_all
-            if (e.get("heat_number") or "").strip() and e.get("bbox")
+            e
+            for e in gt_v2_all
+            if (e.get("heat_number") or "").strip()
+            and "?" not in (e.get("heat_number") or "")
+            and e.get("bbox")
         ]
+        skipped = len(gt_v2_all) - len(gt_v2)
         print(f"Loaded {len(gt_v2_all)} per-billet GT entries from {gt_v2_path}")
-        print(f"  Benchmarking: {len(gt_v2)} billets with heat numbers + bbox")
+        print(
+            f"  Benchmarking: {len(gt_v2)} billets (skipped {skipped} with unreadable heat)"
+        )
 
         # Shuffle billets (grouped by image)
         if args.shuffle:
             # Shuffle at image level to keep billets from the same image together
             from itertools import groupby
+
             images_billets: dict[str, list[dict]] = {}
             for e in gt_v2:
                 images_billets.setdefault(e["image"], []).append(e)
@@ -1895,34 +2182,44 @@ def main() -> None:
             # Brief summary
             gt_h = result["ground_truth"].get("heat_number", "")
             f2 = result["methods"].get("florence2_bbox_crop", {})
-            f2sr = result["methods"].get("florence2_bbox_superres", {})
+            f2o = result["methods"].get("florence2_orient", {})
             pad = result["methods"].get("paddle_bbox_crop", {})
+            ens = result["methods"].get("f2_paddle_ensemble", {})
             vlm_m = result["methods"].get("vlm_bbox_crop", {})
 
             f2_info = f"F2={f2.get('heat_number') or '-'} ({_format_acc(f2.get('char_acc_heat'))})"
-            sr_info = f"F2+SR=({_format_acc(f2sr.get('char_acc_heat'))})"
+            orient_info = f"Orient=({_format_acc(f2o.get('char_acc_heat'))})"
             pad_info = f"Pad=({_format_acc(pad.get('char_acc_heat'))})"
+            ens_info = f"Ens=({_format_acc(ens.get('char_acc_heat'))})"
             vlm_info = f"VLM=({_format_acc(vlm_m.get('char_acc_heat'))})"
-            print(f"  GT={gt_h} | {f2_info} | {sr_info} | {pad_info} | {vlm_info}")
+            print(f"  GT={gt_h} | {f2_info} | {orient_info} | {pad_info} | {ens_info} | {vlm_info}")
 
             if result["errors"]:
                 for err in result["errors"]:
                     print(f"  WARNING: {err}")
 
         total_elapsed = time.perf_counter() - total_start
-        print(f"\nBenchmark complete in {total_elapsed:.1f}s ({len(all_results)} billets)")
+        print(
+            f"\nBenchmark complete in {total_elapsed:.1f}s ({len(all_results)} billets)"
+        )
 
         generate_billet_markdown_report(all_results, output_path, timestamp, vlm_model)
 
         # Print aggregate summary
         summary_keys = [
-            "florence2_bbox_crop", "florence2_bbox_superres",
-            "paddle_bbox_crop", "vlm_bbox_crop",
+            "florence2_bbox_crop",
+            "florence2_bbox_superres",
+            "florence2_orient",
+            "paddle_bbox_crop",
+            "f2_paddle_ensemble",
+            "vlm_bbox_crop",
         ]
         summary_labels = {
             "florence2_bbox_crop": "F2 Bbox Crop",
             "florence2_bbox_superres": "F2 Bbox+SR",
+            "florence2_orient": "F2 Multi-Orient",
             "paddle_bbox_crop": "Paddle Bbox",
+            "f2_paddle_ensemble": "F2+Paddle Ens.",
             "vlm_bbox_crop": "VLM Bbox Crop",
         }
         print("\n=== PER-BILLET SUMMARY ===")
@@ -1944,7 +2241,9 @@ def main() -> None:
             avg_char = sum(accs) / len(accs)
             avg_word = sum(word_accs) / len(word_accs) if word_accs else 0.0
             label = summary_labels.get(mk, mk)
-            print(f"{label:<20} {avg_char * 100:>10.1f}% {avg_word * 100:>11.1f}% {len(accs):>5}")
+            print(
+                f"{label:<20} {avg_char * 100:>10.1f}% {avg_word * 100:>11.1f}% {len(accs):>5}"
+            )
 
         sys.exit(0)
 
@@ -1996,7 +2295,11 @@ def main() -> None:
         print(f"VLM model: {vlm_model}")
         print(f"VLM prompt version: V{VLM_PROMPT_VERSION}")
     if use_florence2:
-        from src.config import FLORENCE2_MODEL_ID as _f2_id, FLORENCE2_LORA_PATH as _lora_path
+        from src.config import (
+            FLORENCE2_MODEL_ID as _f2_id,
+            FLORENCE2_LORA_PATH as _lora_path,
+        )
+
         print(f"Florence-2: enabled (model={_f2_id}, lora={_lora_path})")
     if use_ensemble_v2:
         print("Ensemble V2: enabled (Florence-2 cascade + VLM fallback)")
@@ -2017,7 +2320,7 @@ def main() -> None:
         random.shuffle(ground_truth)
         print(f"Shuffled {len(ground_truth)} images")
     if args.max_images > 0:
-        ground_truth = ground_truth[:args.max_images]
+        ground_truth = ground_truth[: args.max_images]
         print(f"Limited to {args.max_images} images")
 
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -2033,7 +2336,10 @@ def main() -> None:
         print(f"\n[{idx}/{len(ground_truth)}] Processing: {img_name}")
 
         result = _run_image_benchmark(
-            entry, use_vlm=use_vlm, vlm_only=vlm_only, vlm_model=vlm_model,
+            entry,
+            use_vlm=use_vlm,
+            vlm_only=vlm_only,
+            vlm_model=vlm_model,
             use_florence2=use_florence2,
             use_bbox_crop=use_bbox_crop,
             bbox_annotations=bbox_annotations,
@@ -2123,7 +2429,7 @@ def main() -> None:
             for err in result["errors"]:
                 print(f"  WARNING: {err}")
 
-    total_elapsed = (time.perf_counter() - total_start)
+    total_elapsed = time.perf_counter() - total_start
     print(f"\nBenchmark complete in {total_elapsed:.1f}s")
 
     # ------------------------------------------------------------------
@@ -2135,12 +2441,21 @@ def main() -> None:
     # Print aggregate summary to stdout as well
     # ------------------------------------------------------------------
     summary_keys = [
-        "raw", "preprocessed", "roi_preprocessed", "postprocessed",
+        "raw",
+        "preprocessed",
+        "roi_preprocessed",
+        "postprocessed",
         "bbox_crop",
-        "vlm_only", "vlm_raw", "vlm_center_crop",
-        "florence2_raw", "florence2_crop", "florence2_bbox_crop",
-        "florence2_bbox_superres", "florence2_raw_validated",
-        "ensemble", "ensemble_v2",
+        "vlm_only",
+        "vlm_raw",
+        "vlm_center_crop",
+        "florence2_raw",
+        "florence2_crop",
+        "florence2_bbox_crop",
+        "florence2_bbox_superres",
+        "florence2_raw_validated",
+        "ensemble",
+        "ensemble_v2",
     ]
     print("\n=== SUMMARY ===")
     print(f"{'Method':<25} {'Avg Char Acc':>13} {'Avg Word Acc':>13}")

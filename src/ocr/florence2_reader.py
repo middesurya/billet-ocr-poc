@@ -30,6 +30,7 @@ from src.config import (
     FLORENCE2_MODEL_ID,
     FLORENCE2_TASK,
     HEAT_NUMBER_PATTERN,
+    MULTI_ORIENT_ANGLES,
     SEQUENCE_PATTERN,
     STRAND_PATTERN,
 )
@@ -417,3 +418,92 @@ def _image_label(image: Union[str, Path, np.ndarray]) -> str:
     if isinstance(image, np.ndarray):
         return "<numpy_array>"
     return Path(image).name
+
+
+def rotate_image(image: np.ndarray, angle: int) -> np.ndarray:
+    """Rotate image by a fixed angle (0, 90, 180, 270).
+
+    Args:
+        image: Input BGR/RGB numpy array.
+        angle: Rotation angle in degrees. Must be 0, 90, 180, or 270.
+
+    Returns:
+        Rotated image. Returns original if angle is 0.
+    """
+    if angle == 0:
+        return image
+    elif angle == 90:
+        return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+    elif angle == 180:
+        return cv2.rotate(image, cv2.ROTATE_180)
+    elif angle == 270:
+        return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    else:
+        logger.warning(f"[Florence-2] Unsupported rotation angle: {angle}")
+        return image
+
+
+def read_billet_with_orientation(
+    image: Union[str, Path, np.ndarray],
+    orientations: Optional[list[int]] = None,
+    task: str = FLORENCE2_TASK,
+    model_id: str = FLORENCE2_MODEL_ID,
+) -> BilletReading:
+    """Try multiple image orientations and return the best Florence-2 result.
+
+    Some billets are photographed upside-down. This function tries 0° first
+    and short-circuits if the result is a valid 5-digit heat number. Otherwise,
+    it tries 180° and returns whichever orientation produced the best result.
+
+    Args:
+        image: File path or BGR numpy array.
+        orientations: List of angles to try (default: from config MULTI_ORIENT_ANGLES).
+        task: Florence-2 task prompt.
+        model_id: HuggingFace model ID.
+
+    Returns:
+        BilletReading from the best orientation.
+    """
+    if orientations is None:
+        orientations = MULTI_ORIENT_ANGLES
+
+    # Convert to numpy array once (avoid re-reading file for each rotation)
+    if isinstance(image, (str, Path)):
+        img_array = cv2.imread(str(image))
+        if img_array is None:
+            logger.error(f"[Florence-2] Failed to load image: {image}")
+            return BilletReading(method=OCRMethod.VLM_FLORENCE2)
+    else:
+        img_array = image
+
+    best_result: Optional[BilletReading] = None
+    best_score: float = -1.0
+
+    for angle in orientations:
+        rotated = rotate_image(img_array, angle)
+        result = read_billet_with_florence2(rotated, task=task, model_id=model_id)
+
+        # Score: valid 5-digit heat = high, any digits = medium, else low
+        score = 0.0
+        if result.heat_number and re.match(r"^\d{5}$", result.heat_number):
+            score = 2.0 + result.confidence
+        elif result.heat_number and result.heat_number.isdigit():
+            score = 1.0 + result.confidence
+        else:
+            score = result.confidence
+
+        logger.debug(
+            f"[Florence-2] Orientation {angle}° | heat={result.heat_number} | "
+            f"score={score:.2f}"
+        )
+
+        if score > best_score:
+            best_score = score
+            best_result = result
+
+        # Short-circuit: if 0° gives a valid 5-digit result, skip other angles
+        if angle == 0 and result.heat_number and re.match(r"^\d{5}$", result.heat_number):
+            logger.debug("[Florence-2] 0° orientation valid, skipping rotation")
+            break
+
+    return best_result or BilletReading(method=OCRMethod.VLM_FLORENCE2)

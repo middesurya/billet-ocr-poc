@@ -14,7 +14,7 @@ Steel billet stamps are hard to read because of:
 
 ## Architecture
 
-Florence-2 primary OCR with Claude Vision as intelligent fallback:
+Florence-2 + PaddleOCR cross-validation ensemble with Claude Vision fallback:
 
 ```
 Surveillance Image (1280x640)
@@ -23,62 +23,61 @@ Surveillance Image (1280x640)
 Roboflow Bounding Boxes (per-billet isolation)
   |
   v
-Florence-2 (local, 126ms/image)
-  |
-  |-- confidence >= 0.85 --> Result
-  |
-  |-- confidence < 0.85 --> Claude Vision Fallback
-  |                              |
-  |                              v
-  |                           Result
-  |
-  v
-Post-processing (character confusion correction + format validation)
++------ Bbox Crop + Padding ------+
+|                                  |
+v                                  v
+Florence-2 (0° + 180°)      PaddleOCR + CLAHE
++ Format Validation          (angle classifier)
+|                                  |
++---------> Cross-Validate <-------+
+                 |
+    Agree? ----> High confidence result (77% accuracy)
+    Disagree? -> Prefer PaddleOCR
+    Neither? --> Claude Vision Fallback
 ```
 
-### Why Florence-2?
-- Achieves 86-100% accuracy on high-res billet images
-- Runs locally on GPU — no API costs for primary inference
-- 126ms per image — viable for edge deployment (NVIDIA Jetson)
-- Claude Vision serves as fallback only for low-confidence cases
-
-### Why Not PaddleOCR?
-PaddleOCR was the original architecture choice but benchmarking showed only 1.8-17.6% accuracy on surveillance images. It remains in the codebase for potential future use on high-res single-billet images.
+### Why This Architecture?
+- **Florence-2 + PaddleOCR ensemble achieves 77.0% heat char accuracy** — exceeding either engine alone
+- Florence-2 and PaddleOCR fail on *different* images — cross-validation catches complementary failures
+- Multi-orientation (0°/180°) handles upside-down billets in surveillance feeds
+- Format validation extracts 5-digit heat numbers from noisy F2 output (+11% accuracy alone)
+- Claude Vision serves as fallback only for genuinely hard cases
 
 ## OCR Engines
 
 | Engine | Type | Speed | Best Accuracy | Cost | Status |
 |--------|------|:-----:|:------------:|:----:|:------:|
-| **Florence-2 (0.23B)** | Local VLM | **126ms** | **86-100%** (high-res) | Free | **Primary** |
-| **Claude Vision (Sonnet 4.5)** | Cloud VLM | ~3s | **66.7%** char | ~$0.005/img | Fallback |
-| PaddleOCR PP-OCRv5 | Local OCR | ~100ms | 15.0% char | Free | Secondary |
+| **F2+Paddle Ensemble** | Local | **~1.7s** | **77.0%** char | Free | **Primary** |
+| **Florence-2 (0.23B)** | Local VLM | ~200ms | 69.9% char | Free | Ensemble component |
+| **PaddleOCR PP-OCRv5** | Local OCR | ~100ms | 65.2% char | Free | Ensemble component |
+| **Claude Vision** | Cloud VLM | ~3s | 66.7% char | ~$0.005/img | Fallback |
 
 Previously evaluated but removed: EasyOCR, TrOCR, docTR, GOT-OCR-2.0 (all underperformed on this dataset).
 
 ## Benchmark Results
 
-### Original Images (5 high-res close-up photos)
+### Latest: V10 Per-Billet (73 billets across 14 images, v9 1280x640)
 
-| Method | Avg Char Accuracy | Avg Word Accuracy | Avg Time |
-|--------|:-:|:-:|:-:|
-| **VLM Raw (Claude)** | **66.7%** | 20.0% | 3302ms |
-| VLM Center Crop | 63.3% | 20.0% | 3095ms |
-| VLM Preprocessed | 56.7% | 20.0% | 3046ms |
-| **Florence-2 Crop** | **53.8%** | **20.0%** | **126ms** |
-| Florence-2 Raw | 31.4% | 0.0% | 4966ms |
-| PaddleOCR Raw | 3.3% | 0.0% | 72159ms |
-
-### Roboflow Dataset (30 surveillance camera images, 640x640)
-
-| Method | Avg Char Accuracy | Avg Word Accuracy |
+| Method | Avg Heat Char Acc | Avg Heat Exact Match |
 |--------|:-:|:-:|
-| **VLM Center Crop** | **57.4%** | 16.7% |
-| VLM Raw | 54.7% | 13.3% |
-| VLM Preprocessed | 46.8% | 16.7% |
-| Bbox Crop + PaddleOCR | 15.0% | 0.0% |
-| PaddleOCR Raw | 1.9% | 0.0% |
+| **F2+Paddle Ensemble** | **77.0%** | **68.5%** |
+| F2 Multi-Orient (0°+180°) | 69.9% | 60.3% |
+| PaddleOCR Bbox+CLAHE | 65.2% | 56.2% |
+| F2 Bbox Crop (format fix) | 60.8% | 52.1% |
+| F2 Bbox+SuperRes | 60.3% | 49.3% |
 
-> **Key Insight:** VLMs significantly outperform traditional OCR on industrial stamp reading. Florence-2 runs locally for free at 126ms/image — viable for edge deployment. CLAHE preprocessing helps PaddleOCR but actually *hurts* VLM performance on paint-stenciled text.
+### Accuracy Improvement History
+
+| Version | Best Method | Heat Char Acc | Key Change |
+|---------|-------------|:------------:|------------|
+| V7 baseline | VLM Center Crop | 57.4% | Initial benchmarks |
+| V9 zero-shot | PaddleOCR+CLAHE | 65.2% | Higher-res dataset (1280x640) |
+| **V10 ensemble** | **F2+Paddle** | **77.0%** | **Format fix + multi-orient + cross-validation** |
+
+> **Key Insights:**
+> - **Post-processing > model improvements**: Format validator fix alone = +11.2% accuracy (more than any model change)
+> - **Complementary engines beat individual**: F2+PaddleOCR (77%) > PaddleOCR (65%) > F2 (61%) because they fail differently
+> - **Multi-orientation is critical**: 10% of billets are upside-down; 180° rotation adds +9% to F2 accuracy
 
 Full reports in [`docs/`](docs/).
 
@@ -131,13 +130,15 @@ billet-ocr-setup/
 |   |   |-- pipeline.py            # CLAHE + bilateral filter pipeline
 |   |   |-- roi_detector.py        # Billet face ROI detection (4 strategies)
 |   |   |-- perspective.py         # Perspective correction
+|   |   |-- super_resolution.py    # ESPCN x4 super-resolution for tiny crops
 |   |-- ocr/
 |   |   |-- paddle_ocr.py          # PaddleOCR PP-OCRv5 integration
 |   |   |-- vlm_reader.py          # Claude Vision API reader
-|   |   |-- florence2_reader.py    # Florence-2 local VLM reader
-|   |   |-- ensemble.py            # Florence-2 + VLM fallback pipeline
+|   |   |-- florence2_reader.py    # Florence-2 local VLM + multi-orientation
+|   |   |-- ensemble.py            # F2+PaddleOCR cross-validation + VLM fallback
 |   |-- postprocess/
 |       |-- validator.py           # Format validation + character confusion map
+|       |-- format_validator.py    # Florence-2 output format extraction (5-digit heat)
 |       |-- char_replace.py        # Character replacement with confidence scoring
 |-- scripts/
 |   |-- benchmark.py               # Multi-engine accuracy benchmark suite
@@ -233,12 +234,13 @@ Line 2: 5383          (4-digit sequence)
 
 ## Key Findings
 
-1. **VLMs beat traditional OCR** for industrial stamp reading — Florence-2 at 86-100% (high-res) vs PaddleOCR at 3-15%
-2. **Florence-2 is the edge deployment candidate** — 126ms, free, local, no API needed
-3. **Resolution is the #1 bottleneck** — 640x640 with ~50px billet faces is too small; 1280x640 with ~100-200px crops works
-4. **CLAHE helps PaddleOCR but hurts VLMs** on paint-stenciled text
-5. **Bounding box isolation** is critical for multi-billet surveillance frames
-6. **Data quality > model complexity** — fine-tuning on noisy VLM-generated labels caused catastrophic forgetting
+1. **Cross-engine ensemble beats any single engine** — F2+PaddleOCR (77%) > PaddleOCR (65%) > Florence-2 (61%)
+2. **Post-processing gives the biggest ROI** — format validator fix = +11.2% accuracy, more than any model change
+3. **Multi-orientation is essential** — 10% of surveillance images have upside-down billets; 0°/180° adds +9%
+4. **Resolution is the #1 bottleneck** — 640x640 with ~50px billet faces is too small; 1280x640 with ~100-200px crops works
+5. **CLAHE helps PaddleOCR but hurts VLMs** on paint-stenciled text
+6. **Bounding box isolation** is critical for multi-billet surveillance frames
+7. **Data quality > model complexity** — fine-tuning on noisy VLM-generated labels caused catastrophic forgetting
 
 ## Tech Stack
 
