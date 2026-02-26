@@ -1395,10 +1395,27 @@ def _run_billet_benchmark(
         try:
             from src.ocr.ensemble import cross_validate_f2_paddle
             from src.postprocess.format_validator import validate_florence2_output
+            from src.postprocess.validator import validate_and_correct_reading
 
             # Use the multi-orient F2 result (best of 0°/180°) for cross-validation
             f2_for_xval = result["methods"].get("florence2_orient", {})
             paddle_for_xval = result["methods"].get("paddle_bbox_crop", {})
+
+            # Apply character confusion correction to PaddleOCR before cross-validation
+            paddle_heat_raw = paddle_for_xval.get("heat_number")
+            if paddle_heat_raw:
+                temp_paddle = BilletReading(
+                    heat_number=paddle_heat_raw,
+                    sequence=paddle_for_xval.get("sequence"),
+                    confidence=paddle_for_xval.get("confidence", 0.0),
+                    method=OCRMethod.PADDLE_BBOX_CROP,
+                )
+                corrected_paddle = validate_and_correct_reading(temp_paddle)
+                paddle_for_xval = {
+                    **paddle_for_xval,
+                    "heat_number": corrected_paddle.heat_number,
+                    "sequence": corrected_paddle.sequence,
+                }
 
             # Reconstruct BilletReading objects for cross-validation
             f2_reading_xval = BilletReading(
@@ -1416,7 +1433,21 @@ def _run_billet_benchmark(
                 raw_texts=paddle_for_xval.get("raw_texts", []),
             )
 
-            xval_result = cross_validate_f2_paddle(f2_reading_xval, paddle_reading_xval)
+            # Build VLM fallback reading from Stage 4 result (zero extra cost)
+            vlm_for_xval = result["methods"].get("vlm_bbox_crop", {})
+            vlm_reading_xval = None
+            if vlm_for_xval.get("heat_number"):
+                vlm_reading_xval = BilletReading(
+                    heat_number=vlm_for_xval.get("heat_number"),
+                    sequence=vlm_for_xval.get("sequence"),
+                    confidence=vlm_for_xval.get("confidence", 0.0),
+                    method=OCRMethod.VLM_CLAUDE,
+                    raw_texts=vlm_for_xval.get("raw_texts", []),
+                )
+
+            xval_result = cross_validate_f2_paddle(
+                f2_reading_xval, paddle_reading_xval, vlm_reading_xval
+            )
 
             result["methods"]["f2_paddle_ensemble"] = {
                 "heat_number": xval_result.heat_number,

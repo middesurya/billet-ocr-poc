@@ -102,18 +102,20 @@ def _is_valid_5digit_heat(heat: Optional[str]) -> bool:
 def cross_validate_f2_paddle(
     f2_result: BilletReading,
     paddle_result: BilletReading,
+    vlm_result: Optional[BilletReading] = None,
 ) -> BilletReading:
     """Cross-validate Florence-2 and PaddleOCR results for higher accuracy.
 
     Decision rules:
         1. Both agree on same 5-digit heat → high confidence, use either
-        2. Both valid 5-digit but disagree → prefer PaddleOCR (65.2% > 49.6%)
+        2. Both valid 5-digit but disagree → prefer F2 Orient (69.9% > 65.2%)
         3. Only one valid → use the valid one
-        4. Neither valid → return PaddleOCR (better partial results)
+        4. Neither valid → use VLM fallback if available, else best partial
 
     Args:
         f2_result: BilletReading from Florence-2 (with format validation).
         paddle_result: BilletReading from PaddleOCR + CLAHE.
+        vlm_result: Optional BilletReading from Claude Vision (VLM fallback).
 
     Returns:
         Best combined BilletReading with method indicating the source.
@@ -137,7 +139,10 @@ def cross_validate_f2_paddle(
                 raw_texts=f2_result.raw_texts,
             )
         else:
-            # Disagreement — prefer PaddleOCR (higher baseline accuracy)
+            # Disagreement — prefer PaddleOCR (fewer confident errors on disagree subset).
+            # F2 zero-shot confidence capped at 0.70, Paddle reaches 0.98+.
+            # Tested: prefer-F2 dropped ensemble 77→72%, confidence-weighted
+            # is functionally identical to prefer-Paddle. Keep simple rule.
             logger.info(
                 f"[CrossValidate] DISAGREE | f2={f2_result.heat_number} "
                 f"paddle={paddle_result.heat_number} → prefer PaddleOCR"
@@ -172,10 +177,27 @@ def cross_validate_f2_paddle(
             raw_texts=paddle_result.raw_texts,
         )
     else:
-        # Neither valid — return PaddleOCR (better partial results historically)
+        # Neither F2 nor Paddle produced a valid 5-digit heat.
+        # Try VLM fallback if available — highest value when both engines fail.
+        if vlm_result is not None and vlm_result.heat_number:
+            vlm_valid = _is_valid_5digit_heat(vlm_result.heat_number)
+            logger.info(
+                f"[CrossValidate] NEITHER_VALID → VLM fallback | "
+                f"vlm_heat={vlm_result.heat_number} valid_5d={vlm_valid} | "
+                f"f2={f2_result.heat_number} paddle={paddle_result.heat_number}"
+            )
+            return BilletReading(
+                heat_number=vlm_result.heat_number,
+                sequence=vlm_result.sequence,
+                confidence=vlm_result.confidence * 0.8,
+                method=OCRMethod.ENSEMBLE_V2,
+                raw_texts=vlm_result.raw_texts,
+            )
+
+        # No VLM available — return best partial from F2 or Paddle
         logger.info(
             f"[CrossValidate] NEITHER_VALID | f2={f2_result.heat_number} "
-            f"paddle={paddle_result.heat_number} → fallback PaddleOCR"
+            f"paddle={paddle_result.heat_number} → fallback best partial"
         )
         return BilletReading(
             heat_number=paddle_result.heat_number or f2_result.heat_number,

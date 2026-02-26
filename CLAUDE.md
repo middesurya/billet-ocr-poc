@@ -18,13 +18,15 @@ We use Florence-2 as the primary OCR engine with Claude Vision as intelligent fa
 3. Claude Vision serves as fallback for low-confidence cases (< 0.85 threshold)
 4. Roboflow bounding boxes isolate individual billets from multi-billet surveillance frames
 
-### F2+PaddleOCR Cross-Validation Ensemble (V10)
-The V10 pipeline combines Florence-2 multi-orientation + format validation with PaddleOCR+CLAHE cross-validation:
+### F2+PaddleOCR+VLM Cross-Validation Ensemble (V11)
+The V11 pipeline combines Florence-2 multi-orientation + format validation with PaddleOCR+CLAHE cross-validation and Claude Vision VLM fallback:
 1. Florence-2 tries 0° and 180° orientations on bbox crop (handles upside-down billets)
 2. Format validator extracts 5-digit heat from noisy F2 output (fixes extra-digit appending)
-3. PaddleOCR+CLAHE runs on same crop (handles heavy oxidation/scale)
+3. PaddleOCR+CLAHE runs on same crop with character confusion correction (handles heavy oxidation/scale)
 4. Cross-validation: if both agree → high confidence; if disagree → prefer PaddleOCR
-5. **Result: 77.0% heat char accuracy, 68.5% exact match** on 73-billet GT V2 dataset
+5. VLM fallback: if NEITHER engine produces a valid 5-digit heat → use Claude Vision result
+6. **Result: 77.3% heat char accuracy, 68.5% exact match** on 73-billet GT V2 dataset (without VLM)
+7. **Expected: >80% with VLM fallback** (VLM API rate-limited during benchmark, untested)
 
 ### Why Not PaddleOCR Alone?
 PaddleOCR was the original architecture choice (validated by Wei & Zhou, Feb 2025 for dot-matrix stamps), but benchmarking on v7 showed only 1.8-17.6% on Roboflow surveillance images. On v9 per-billet crops, PaddleOCR+CLAHE achieves **65.2% heat char accuracy** — outperforming Florence-2 zero-shot (49.6%) on small crops but underperforming the F2+Paddle ensemble (77.0%).
@@ -41,6 +43,11 @@ PaddleOCR was the original architecture choice (validated by Wei & Zhou, Feb 202
 9. **Post-processing > model improvements**: Format validator fix alone gave +11.2% accuracy (49.6% → 60.8%) — more than any model change
 10. **Complementary engines beat individual ones**: F2+PaddleOCR ensemble (77.0%) exceeds both F2 alone (60.8%) and PaddleOCR alone (65.2%) because they fail on different images
 11. **Multi-orientation is critical for surveillance cameras**: 7/73 billets are upside-down; trying 180° rotation adds +9% to F2 accuracy
+12. **Disagree rule: prefer PaddleOCR despite lower overall accuracy** (Simpson's Paradox): F2 Orient (69.9%) > Paddle (65.2%) overall, but on the disagree subset Paddle wins — F2 makes more "confident errors" (wrong but valid 5-digit heats). Reverting to prefer-F2 dropped ensemble from 77.0% to 72.1%
+13. **Florence-2-large (0.77B) hurts ensemble despite better individual accuracy**: F2-large gives +1.1% F2 Orient (71.0%) but -2.2% ensemble (75.1%) because it produces fewer "wrong-but-valid" 5-digit outputs that enable the AGREE/DISAGREE paths. The ensemble was inadvertently optimized for F2-base's error patterns
+14. **Florence-2 defaults to num_beams=3 — DO NOT override**: Setting num_beams=1 caused -4.4% regression (69.9%→65.5%). The model's generation_config already has beam search enabled. Explicitly setting num_beams=3 had "no effect" because it matched the default
+15. **No preprocessing helps Florence-2 on embossed stamps**: Tested CLAHE, strong CLAHE, unsharp mask, bilateral+CLAHE on billet_05 — all 0%. The 53-75px crops are below F2's information-theoretic floor
+16. **Mathematical ceiling: 79.7% max without VLM/billet_05 fix**: 15 unreachable billets from one image drag accuracy. Excluding them, ensemble is 96.9% on reachable billets
 
 ## Tech Stack
 - Python 3.11+ (use type hints everywhere)

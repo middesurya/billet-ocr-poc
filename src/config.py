@@ -46,9 +46,10 @@ VLM_PROMPT_VERSION = 4  # 1 = original, 2 = chain-of-thought, 3 = flexible forma
 VLM_CROP_RATIO = 0.6  # Crop center 60% of image for VLM (stamps are centered)
 
 # Florence-2 configuration
-FLORENCE2_MODEL_ID = "florence-community/Florence-2-base"
+FLORENCE2_MODEL_ID = "florence-community/Florence-2-base"  # base (0.23B) — large (0.77B) tested but hurts ensemble
 FLORENCE2_TASK = "<OCR>"                    # or "<OCR_WITH_REGION>"
 FLORENCE2_MAX_NEW_TOKENS = 100
+# Note: Florence-2 defaults to num_beams=3 internally — do NOT override to 1 (causes regression)
 FLORENCE2_DEVICE = "cuda"                  # "cpu" if no GPU available
 FLORENCE2_LORA_PATH: Optional[str] = None  # Path to LoRA adapter weights (None = zero-shot)
 # V2 LoRA at models/florence2_billet_lora_v2/best — no improvement over zero-shot (69 entries too small)
