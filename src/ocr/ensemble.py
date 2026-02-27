@@ -71,6 +71,40 @@ class EnsembleV2Result:
     tier_times_ms: dict[str, float] = field(default_factory=dict)
 
 
+def _pick_best_sequence(
+    f2_seq: Optional[str],
+    paddle_seq: Optional[str],
+) -> Optional[str]:
+    """Pick the better sequence from F2 and PaddleOCR.
+
+    PaddleOCR reads line-by-line so it gets full 3-4 digit sequences.
+    Florence-2 concatenates everything into one blob and our splitter
+    often truncates the sequence to 1-2 digits. Prefer the longer one.
+
+    Args:
+        f2_seq: Sequence from Florence-2 (often truncated).
+        paddle_seq: Sequence from PaddleOCR (usually complete).
+
+    Returns:
+        The better sequence string, or None if both are empty.
+    """
+    if not f2_seq and not paddle_seq:
+        return None
+    if not f2_seq:
+        return paddle_seq
+    if not paddle_seq:
+        return f2_seq
+
+    # Prefer longer sequence (3-4 digits over 1-2 digits)
+    if len(paddle_seq) > len(f2_seq):
+        return paddle_seq
+    if len(f2_seq) > len(paddle_seq):
+        return f2_seq
+
+    # Same length — prefer PaddleOCR (reads sequences line-by-line)
+    return paddle_seq
+
+
 def _is_valid_heat(heat: Optional[str]) -> bool:
     """Check if a heat number looks valid (5-7 digits).
 
@@ -127,13 +161,15 @@ def cross_validate_f2_paddle(
         if f2_result.heat_number == paddle_result.heat_number:
             # Agreement — high confidence
             boosted_conf = min(1.0, max(f2_result.confidence, paddle_result.confidence) + 0.2)
+            best_seq = _pick_best_sequence(f2_result.sequence, paddle_result.sequence)
             logger.info(
                 f"[CrossValidate] AGREE | heat={f2_result.heat_number} | "
+                f"seq={best_seq} (f2={f2_result.sequence}, paddle={paddle_result.sequence}) | "
                 f"conf={boosted_conf:.2f}"
             )
             return BilletReading(
                 heat_number=f2_result.heat_number,
-                sequence=f2_result.sequence or paddle_result.sequence,
+                sequence=best_seq,
                 confidence=boosted_conf,
                 method=OCRMethod.ENSEMBLE_V2,
                 raw_texts=f2_result.raw_texts,
@@ -155,12 +191,16 @@ def cross_validate_f2_paddle(
                 raw_texts=paddle_result.raw_texts,
             )
     elif f2_valid:
+        # F2 has valid heat but Paddle doesn't — still check Paddle's sequence
+        # (Paddle reads sequences line-by-line, may have correct seq even with bad heat)
+        best_seq = _pick_best_sequence(f2_result.sequence, paddle_result.sequence)
         logger.info(
-            f"[CrossValidate] F2_ONLY | heat={f2_result.heat_number}"
+            f"[CrossValidate] F2_ONLY | heat={f2_result.heat_number} | "
+            f"seq={best_seq} (f2={f2_result.sequence}, paddle={paddle_result.sequence})"
         )
         return BilletReading(
             heat_number=f2_result.heat_number,
-            sequence=f2_result.sequence,
+            sequence=best_seq,
             confidence=f2_result.confidence,
             method=OCRMethod.ENSEMBLE_V2,
             raw_texts=f2_result.raw_texts,
@@ -195,13 +235,14 @@ def cross_validate_f2_paddle(
             )
 
         # No VLM available — return best partial from F2 or Paddle
+        best_seq = _pick_best_sequence(f2_result.sequence, paddle_result.sequence)
         logger.info(
             f"[CrossValidate] NEITHER_VALID | f2={f2_result.heat_number} "
             f"paddle={paddle_result.heat_number} → fallback best partial"
         )
         return BilletReading(
             heat_number=paddle_result.heat_number or f2_result.heat_number,
-            sequence=paddle_result.sequence or f2_result.sequence,
+            sequence=best_seq,
             confidence=max(paddle_result.confidence, f2_result.confidence) * 0.5,
             method=OCRMethod.ENSEMBLE_V2,
             raw_texts=paddle_result.raw_texts or f2_result.raw_texts,

@@ -142,6 +142,8 @@ Previous approach had a fatal bbox mismatch bug:
 - `python scripts/extract_ground_truth.py --use-bbox --no-all-bboxes --max-images 30` → single-bbox GT (legacy)
 - `python scripts/prepare_florence2_training.py --gt-v2 --augment-factor 3 --target-size 768 --seed 42` → prepare fine-tuning data
 - `python scripts/finetune_florence2.py --data-dir data/training/florence2 --output-dir models/florence2_billet_lora_v2 --epochs 20 --lr 5e-5 --device cuda` → fine-tune Florence-2
+- `python scripts/visual_inference.py` → visual inference on 30 held-out validation images
+- `python scripts/visual_inference.py --max-images 5 --seed 42` → quick smoke test
 - `python -m uvicorn src.api.main:app --reload` → start API server
 
 ## Sub-Agent Routing Rules

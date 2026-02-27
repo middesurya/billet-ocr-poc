@@ -23,6 +23,8 @@ ROBOFLOW_PROJECT = "steel-billet"
 ROBOFLOW_VERSION = 9  # v9: 1280x640, 1551 images (was v7: 640x640, 1783 images)
 ROBOFLOW_DOWNLOAD_DIR = DATA_DIR / "roboflow_download"
 BBOX_ANNOTATIONS_PATH = ANNOTATED_DIR / "roboflow_bboxes.json"
+ROBOFLOW_CONFIDENCE_THRESHOLD = 0.25  # Min confidence for bbox detection (0-1)
+ROBOFLOW_OVERLAP_THRESHOLD = 0.30     # NMS overlap threshold (0-1)
 
 # Preprocessing parameters
 CLAHE_CLIP_LIMIT = 3.0
@@ -70,6 +72,13 @@ GT_REVIEW_DIR = DATA_DIR / "gt_review"           # Root review directory
 GT_REVIEW_SOURCES_DIR = GT_REVIEW_DIR / "sources"  # Full source images for reference
 GT_REVIEW_CROPS_DIR = GT_REVIEW_DIR / "crops"      # Per-billet crop images for review
 
+# Visual inference review
+INFERENCE_REVIEW_DIR = DATA_DIR / "inference_review"
+INFERENCE_REVIEW_SOURCES_DIR = INFERENCE_REVIEW_DIR / "sources"
+INFERENCE_REVIEW_CROPS_DIR = INFERENCE_REVIEW_DIR / "crops"
+INFERENCE_REVIEW_ANNOTATED_DIR = INFERENCE_REVIEW_DIR / "annotated"
+INFERENCE_REVIEW_LIVE_DIR = INFERENCE_REVIEW_DIR / "live"
+
 # Super-resolution configuration
 SUPERRES_MODEL_NAME = "espcn"                                     # ESPCN is fastest (~50ms)
 SUPERRES_SCALE = 4                                                # Upscale factor
@@ -98,10 +107,20 @@ PERSPECTIVE_BORDER_PERCENT = 0.05
 # Billet number format patterns
 HEAT_NUMBER_PATTERN = r"^\d{5,7}$"  # 5-7 digits
 STRAND_PATTERN = r"^\d$"  # Single digit
-SEQUENCE_PATTERN = r"^\d{1,3}$"  # 1-3 digits
+SEQUENCE_PATTERN = r"^\d{1,4}$"  # 1-4 digits (Roboflow: 4-digit sequences like "5383")
+
+# YOLOv8 billet detector
+YOLO_MODEL_PATH = PROJECT_ROOT / "models" / "yolo_billet_detector" / "best.pt"
+YOLO_CONFIDENCE_THRESHOLD = 0.25
+YOLO_IOU_THRESHOLD = 0.45
 
 # Ensure directories exist
 DEBUG_DIR.mkdir(parents=True, exist_ok=True)
 GT_REVIEW_DIR.mkdir(parents=True, exist_ok=True)
 GT_REVIEW_SOURCES_DIR.mkdir(parents=True, exist_ok=True)
 GT_REVIEW_CROPS_DIR.mkdir(parents=True, exist_ok=True)
+INFERENCE_REVIEW_DIR.mkdir(parents=True, exist_ok=True)
+INFERENCE_REVIEW_SOURCES_DIR.mkdir(parents=True, exist_ok=True)
+INFERENCE_REVIEW_CROPS_DIR.mkdir(parents=True, exist_ok=True)
+INFERENCE_REVIEW_ANNOTATED_DIR.mkdir(parents=True, exist_ok=True)
+INFERENCE_REVIEW_LIVE_DIR.mkdir(parents=True, exist_ok=True)

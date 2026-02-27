@@ -242,3 +242,61 @@ def validate_florence2_output(
         return parsed_heat
 
     return None
+
+
+def extract_heat_and_sequence(raw_text: str) -> tuple[Optional[str], Optional[str]]:
+    """Extract both heat number and sequence from raw OCR text.
+
+    Recovers the sequence suffix when a 5-digit heat is extracted from a
+    longer digit string. For example:
+        "612535383" → heat="61253", sequence="5383"
+        "60008 5383" → heat="60008", sequence="5383"
+
+    Args:
+        raw_text: Raw OCR output text.
+
+    Returns:
+        Tuple of (heat_number, sequence). Either may be None.
+    """
+    if not raw_text:
+        return None, None
+
+    # Apply character confusion correction
+    corrected = "".join(CHAR_CONFUSION_MAP.get(c, c) for c in raw_text)
+
+    # Remove non-digit/non-whitespace
+    digits_and_spaces = re.sub(r"[^\d\s]", "", corrected)
+    collapsed = re.sub(r"\s+", "", digits_and_spaces)
+
+    # Case 1: 8-10 digit concatenated string → split at position 5
+    if re.match(r"^\d{8,10}$", collapsed):
+        heat = collapsed[:5]
+        seq = collapsed[5:]
+        # Only return sequence if it looks like 3-4 digits
+        if re.match(r"^\d{3,4}$", seq):
+            logger.debug(
+                f"[FormatValidator] Split concat: '{collapsed}' → heat={heat} seq={seq}"
+            )
+            return heat, seq
+        return heat, None
+
+    # Case 2: space-separated tokens — look for 5-digit heat + 3-4 digit seq
+    tokens = digits_and_spaces.split()
+    heat: Optional[str] = None
+    sequence: Optional[str] = None
+
+    for token in tokens:
+        if heat is None and re.match(r"^\d{5}$", token):
+            heat = token
+        elif heat is not None and sequence is None and re.match(r"^\d{3,4}$", token):
+            sequence = token
+            break
+        elif heat is None and re.match(r"^\d{6,7}$", token):
+            # Longer heat candidate — extract 5-digit prefix, suffix = seq
+            heat = token[:5]
+            suffix = token[5:]
+            if re.match(r"^\d{1,2}$", suffix):
+                sequence = suffix
+            break
+
+    return heat, sequence

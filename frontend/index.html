@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billet OCR — V11 Ensemble Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    .img-fade { opacity: 0; transition: opacity 0.3s ease; }
+    .img-fade.loaded { opacity: 1; }
+    .billet-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .billet-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    .sidebar-item.active { background: #1e40af; border-left: 3px solid #3b82f6; }
+    .drop-zone.drag-over { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    @keyframes pulse-dot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .pulse-dot { animation: pulse-dot 1.4s infinite ease-in-out both; }
+    .pulse-dot:nth-child(1) { animation-delay: -0.32s; }
+    .pulse-dot:nth-child(2) { animation-delay: -0.16s; }
+  </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 overflow-hidden">
+
+  <!-- ===== HEADER ===== -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-700 px-4 py-2 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <h1 class="text-lg font-bold tracking-wider uppercase text-slate-100">
+        Billet OCR <span class="text-blue-400">— V11 Ensemble</span>
+      </h1>
+      <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 text-xs text-slate-400 rounded border border-slate-700">
+        Florence-2 + PaddleOCR + VLM
+      </span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="header-stats" class="text-xs text-slate-500"></div>
+      <div class="flex bg-slate-800 rounded overflow-hidden border border-slate-700">
+        <button id="tab-browse" onclick="switchTab('browse')"
+          class="px-3 py-1 text-sm font-medium transition-colors bg-blue-600 text-white">Browse</button>
+        <button id="tab-live" onclick="switchTab('live')"
+          class="px-3 py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white">Live Upload</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== BROWSE TAB ===== -->
+  <div id="view-browse" class="pt-12 h-full flex">
+    <aside id="sidebar" class="w-60 flex-shrink-0 bg-slate-800 border-r border-slate-700 overflow-y-auto h-full">
+      <div class="p-2 border-b border-slate-700">
+        <input id="sidebar-search" type="text" placeholder="Filter images..."
+          class="w-full px-2 py-1 bg-slate-900 text-sm text-slate-200 rounded border border-slate-600 placeholder-slate-500 focus:outline-none focus:border-blue-500" />
+      </div>
+      <div id="sidebar-list" class="py-1"></div>
+    </aside>
+    <main class="flex-1 overflow-y-auto h-full">
+      <div id="browse-empty" class="flex items-center justify-center h-full text-slate-500">
+        <div class="text-center">
+          <svg class="mx-auto mb-4 w-16 h-16 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p class="text-lg">Select an image from the sidebar</p>
+          <p class="text-sm mt-1">30 pre-computed inference results available</p>
+        </div>
+      </div>
+      <div id="browse-detail" class="hidden p-4">
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 id="detail-title" class="text-lg font-bold text-slate-200"></h2>
+            <div id="detail-stats" class="flex gap-2 text-xs"></div>
+          </div>
+          <div class="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-700">
+            <img id="detail-annotated" class="w-full img-fade" onload="this.classList.add('loaded')" alt="Annotated" />
+          </div>
+          <div id="detail-heats" class="mt-2 text-sm text-slate-400"></div>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Per-Billet Predictions</h3>
+        <div id="billet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 pb-8"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== LIVE TAB ===== -->
+  <div id="view-live" class="pt-12 h-full hidden">
+    <div class="max-w-4xl mx-auto p-6 overflow-y-auto h-full">
+      <div id="drop-zone" class="drop-zone border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer transition-colors hover:border-slate-500"
+        ondragover="event.preventDefault(); this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('file-input').click()">
+        <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.bmp" class="hidden" onchange="handleFileSelect(event)" />
+        <svg class="mx-auto mb-3 w-12 h-12 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <p class="text-slate-300 font-medium">Drag & drop a billet image here</p>
+        <p class="text-sm text-slate-500 mt-1">or click to browse (.jpg .png .bmp, max 20MB)</p>
+      </div>
+      <div class="mt-4 flex items-center gap-4">
+        <button id="btn-infer" onclick="runInference()" disabled
+          class="px-6 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          Run Inference</button>
+        <span id="selected-file" class="text-sm text-slate-400"></span>
+      </div>
+      <div id="live-loading" class="hidden mt-8 text-center">
+        <div class="flex justify-center gap-1 mb-3">
+          <div class="w-3 h-3 bg-blue-500 rounded-full pulse-dot"></div>
+          <div class="w-3 h-3 bg-blue-500 rounded-full pulse-dot"></div>
+          <div class="w-3 h-3 bg-blue-500 rounded-full pulse-dot"></div>
+        </div>
+        <p class="text-slate-400">Running V11 ensemble pipeline...</p>
+        <p id="live-timer" class="text-sm text-slate-500 mt-1"></p>
+      </div>
+      <div id="live-results" class="hidden mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-slate-200">Inference Results</h2>
+          <div id="live-meta" class="text-xs text-slate-500"></div>
+        </div>
+        <div class="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-700 mb-4">
+          <img id="live-annotated" class="w-full img-fade" onload="this.classList.add('loaded')" alt="Annotated" />
+        </div>
+        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Per-Billet Predictions</h3>
+        <div id="live-billet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-8"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BILLET DETAIL MODAL ===== -->
+  <div id="billet-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70"
+    onclick="if(event.target===this) closeBilletModal()">
+    <div class="bg-slate-800 rounded-lg border border-slate-600 shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-slate-700">
+        <h3 id="modal-title" class="font-bold text-slate-200"></h3>
+        <button onclick="closeBilletModal()" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+      </div>
+      <div id="modal-body" class="p-4"></div>
+    </div>
+  </div>
+
+<script>
+// =========================================================================
+// State
+// =========================================================================
+let browseData = [];
+let currentImage = null;
+let selectedFile = null;
+
+// =========================================================================
+// Safe DOM helpers
+// =========================================================================
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    Object.entries(attrs).forEach(([k, v]) => {
+      if (k === 'className') e.className = v;
+      else if (k === 'textContent') e.textContent = v;
+      else if (k.startsWith('on')) e[k] = v;
+      else e.setAttribute(k, v);
+    });
+  }
+  if (children) {
+    (Array.isArray(children) ? children : [children]).forEach(c => {
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else if (c) e.appendChild(c);
+    });
+  }
+  return e;
+}
+
+function clearEl(id) {
+  const e = document.getElementById(id);
+  while (e.firstChild) e.removeChild(e.firstChild);
+  return e;
+}
+
+// =========================================================================
+// Init
+// =========================================================================
+async function init() {
+  try {
+    const [imagesRes, statsRes] = await Promise.all([
+      fetch('/api/browse/images'),
+      fetch('/api/browse/stats'),
+    ]);
+    browseData = await imagesRes.json();
+    const stats = await statsRes.json();
+
+    const cd = stats.confidence_distribution;
+    const total = stats.total_billets;
+    const highPct = total > 0 ? Math.round((cd.high / total) * 100) : 0;
+    document.getElementById('header-stats').textContent =
+      stats.total_images + ' images | ' + total + ' billets | ' + highPct + '% high confidence';
+
+    renderSidebar(browseData);
+  } catch (err) {
+    console.error('Failed to load browse data:', err);
+    document.getElementById('header-stats').textContent = 'API unavailable';
+  }
+}
+
+// =========================================================================
+// Tabs
+// =========================================================================
+function switchTab(tab) {
+  const browseView = document.getElementById('view-browse');
+  const liveView = document.getElementById('view-live');
+  const tabBrowse = document.getElementById('tab-browse');
+  const tabLive = document.getElementById('tab-live');
+  if (tab === 'browse') {
+    browseView.classList.remove('hidden');
+    liveView.classList.add('hidden');
+    tabBrowse.className = 'px-3 py-1 text-sm font-medium transition-colors bg-blue-600 text-white';
+    tabLive.className = 'px-3 py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white';
+  } else {
+    browseView.classList.add('hidden');
+    liveView.classList.remove('hidden');
+    tabLive.className = 'px-3 py-1 text-sm font-medium transition-colors bg-blue-600 text-white';
+    tabBrowse.className = 'px-3 py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white';
+  }
+}
+
+// =========================================================================
+// Sidebar
+// =========================================================================
+function renderSidebar(items) {
+  const container = clearEl('sidebar-list');
+  items.forEach(function(item) {
+    var indicatorClass, indicatorTitle;
+    if (!item.is_consistent && item.distinct_heats.length > 0) {
+      indicatorClass = 'w-2 h-2 rounded-full bg-yellow-500';
+      indicatorTitle = 'Multi-heat: ' + item.distinct_heats.join(', ');
+    } else if (item.distinct_heats.length > 0) {
+      indicatorClass = 'w-2 h-2 rounded-full bg-green-500';
+      indicatorTitle = 'Consistent: ' + item.distinct_heats[0];
+    } else {
+      indicatorClass = 'w-2 h-2 rounded-full bg-slate-600';
+      indicatorTitle = 'No valid heats detected';
+    }
+
+    var row = el('div', {
+      className: 'sidebar-item px-3 py-2 cursor-pointer hover:bg-slate-700 border-l-3 border-transparent flex items-center justify-between text-sm',
+      'data-name': item.friendly_name,
+      onclick: function() { selectImage(item.friendly_name); },
+    }, [
+      el('span', { className: 'text-slate-300', textContent: item.friendly_name }),
+      el('span', { className: 'flex items-center gap-1.5' }, [
+        el('span', { className: 'text-xs text-slate-500', textContent: '(' + item.num_billets + ')' }),
+        el('span', { className: indicatorClass, title: indicatorTitle }),
+      ]),
+    ]);
+    container.appendChild(row);
+  });
+
+  document.getElementById('sidebar-search').oninput = function(e) {
+    var q = e.target.value.toLowerCase();
+    container.querySelectorAll('.sidebar-item').forEach(function(el) {
+      el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+    });
+  };
+}
+
+// =========================================================================
+// Image selection
+// =========================================================================
+async function selectImage(friendlyName) {
+  document.querySelectorAll('.sidebar-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.name === friendlyName);
+  });
+  try {
+    var res = await fetch('/api/browse/images/' + encodeURIComponent(friendlyName));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    currentImage = await res.json();
+    renderDetail(currentImage);
+  } catch (err) {
+    console.error('Failed to load image:', err);
+  }
+}
+
+function renderDetail(img) {
+  document.getElementById('browse-empty').classList.add('hidden');
+  document.getElementById('browse-detail').classList.remove('hidden');
+
+  document.getElementById('detail-title').textContent = img.friendly_name;
+
+  // Stats badges (safe DOM)
+  var statsEl = clearEl('detail-stats');
+  var cs = img.confidence_summary;
+  [
+    { label: 'High: ' + cs.high, cls: 'px-2 py-0.5 rounded bg-green-900/50 text-green-400 border border-green-800' },
+    { label: 'Med: ' + cs.medium, cls: 'px-2 py-0.5 rounded bg-yellow-900/50 text-yellow-400 border border-yellow-800' },
+    { label: 'Low: ' + cs.low, cls: 'px-2 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-800' },
+  ].forEach(function(b) {
+    statsEl.appendChild(el('span', { className: b.cls, textContent: b.label }));
+  });
+
+  // Annotated image
+  var annImg = document.getElementById('detail-annotated');
+  annImg.classList.remove('loaded');
+  annImg.src = img.annotated_url;
+
+  // Distinct heats (safe DOM)
+  var heatsEl = clearEl('detail-heats');
+  if (img.distinct_heats.length > 0) {
+    heatsEl.appendChild(el('span', { className: 'text-slate-500', textContent: 'Heats: ' }));
+    img.distinct_heats.forEach(function(h, i) {
+      if (i > 0) heatsEl.appendChild(document.createTextNode(', '));
+      heatsEl.appendChild(el('span', { className: 'font-mono text-blue-400', textContent: h }));
+    });
+  } else {
+    heatsEl.appendChild(el('span', { className: 'text-slate-600', textContent: 'No valid heats detected' }));
+  }
+
+  renderBilletGrid(img.billets, 'billet-grid');
+}
+
+// =========================================================================
+// Billet grid rendering (shared between browse & live)
+// =========================================================================
+function renderBilletGrid(billets, containerId) {
+  var grid = clearEl(containerId);
+
+  billets.forEach(function(b, idx) {
+    var ens = b.ensemble || {};
+    var heat = ens.heat_number || '???';
+    var conf = ens.confidence || 0;
+    var decision = ens.decision || 'ERROR';
+
+    var img = el('img', {
+      className: 'w-full h-full object-contain img-fade',
+      src: b.crop_url,
+      alt: 'Billet ' + idx,
+      onload: function() { this.classList.add('loaded'); },
+    });
+
+    var card = el('div', {
+      className: 'billet-card bg-slate-800 rounded-lg border border-slate-700 overflow-hidden cursor-pointer',
+      onclick: function() { openBilletModal(b, idx); },
+    }, [
+      el('div', { className: 'aspect-square bg-slate-950 flex items-center justify-center overflow-hidden' }, [img]),
+      el('div', { className: 'p-2' }, [
+        el('div', { className: 'font-mono text-lg font-bold ' + confColor(conf), textContent: heat }),
+        ens.sequence ? el('div', { className: 'font-mono text-xs text-slate-400 mt-0.5', textContent: 'seq: ' + ens.sequence }) : null,
+        el('div', { className: 'flex items-center justify-between mt-1' }, [
+          el('span', { className: 'text-xs px-1.5 py-0.5 rounded ' + confBadgeClass(conf), textContent: Math.round(conf * 100) + '%' }),
+          el('span', { className: 'text-xs px-1.5 py-0.5 rounded ' + decisionBadgeClass(decision), textContent: decisionLabel(decision) }),
+        ]),
+      ]),
+    ]);
+
+    grid.appendChild(card);
+  });
+}
+
+// =========================================================================
+// Billet detail modal (safe DOM construction)
+// =========================================================================
+function openBilletModal(billet, idx) {
+  var modal = document.getElementById('billet-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('modal-title').textContent = 'Billet #' + idx;
+
+  var ens = billet.ensemble || {};
+  var f2 = billet.f2_orient || {};
+  var paddle = billet.paddle || {};
+
+  var body = clearEl('modal-body');
+
+  // Top section: crop image + ensemble summary
+  var topRow = el('div', { className: 'flex gap-4 mb-4' }, [
+    el('div', { className: 'w-32 h-32 bg-slate-950 rounded overflow-hidden flex-shrink-0' }, [
+      el('img', { src: billet.crop_url, className: 'w-full h-full object-contain', alt: 'Crop' }),
+    ]),
+    el('div', { className: 'flex-1' }, [
+      el('div', { className: 'font-mono text-2xl font-bold ' + confColor(ens.confidence || 0) }, [
+        document.createTextNode(ens.heat_number || '???'),
+        ens.sequence ? document.createTextNode(' / ') : null,
+        ens.sequence ? el('span', { className: 'text-lg text-slate-300', textContent: ens.sequence }) : null,
+      ]),
+      ens.sequence ? el('div', { className: 'text-sm text-slate-400 mt-1' }, [
+        document.createTextNode('Sequence: '),
+        el('span', { className: 'font-mono text-slate-300', textContent: ens.sequence }),
+      ]) : null,
+      el('div', { className: 'mt-2 flex gap-2' }, [
+        el('span', { className: 'text-xs px-2 py-0.5 rounded ' + confBadgeClass(ens.confidence || 0), textContent: Math.round((ens.confidence || 0) * 100) + '%' }),
+        el('span', { className: 'text-xs px-2 py-0.5 rounded ' + decisionBadgeClass(ens.decision || 'ERROR'), textContent: decisionLabel(ens.decision || 'ERROR') }),
+      ]),
+    ]),
+  ]);
+  body.appendChild(topRow);
+
+  // Engine comparison heading
+  body.appendChild(el('div', { className: 'text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2', textContent: 'Engine Comparison' }));
+
+  // Table
+  var table = el('table', { className: 'w-full text-sm' });
+  var thead = el('thead');
+  var headRow = el('tr', { className: 'text-left text-slate-500 border-b border-slate-700' });
+  ['Engine', 'Heat', 'Seq', 'Conf'].forEach(function(h) {
+    headRow.appendChild(el('th', { className: 'py-1 pr-4', textContent: h }));
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  var tbody = el('tbody');
+  var engines = [
+    { name: 'F2 Orient', data: f2, cls: 'text-slate-400', bold: false },
+    { name: 'PaddleOCR', data: paddle, cls: 'text-slate-400', bold: false },
+    { name: 'Ensemble', data: ens, cls: 'text-blue-400', bold: true },
+  ];
+  engines.forEach(function(eng, i) {
+    var d = eng.data;
+    var borderCls = i < 2 ? ' border-b border-slate-700/50' : '';
+    var heatCls = eng.bold ? ('font-mono font-bold ' + confColor(d.confidence || 0)) : ('font-mono ' + (d.heat_number ? 'text-slate-200' : 'text-slate-600'));
+    var confCls = eng.bold ? ('font-mono font-bold ' + confColor(d.confidence || 0)) : 'font-mono text-slate-400';
+
+    var row = el('tr', { className: borderCls }, [
+      el('td', { className: 'py-1.5 pr-4 ' + (eng.bold ? 'font-semibold ' : '') + eng.cls, textContent: eng.name }),
+      el('td', { className: 'py-1.5 pr-4 ' + heatCls, textContent: d.heat_number || '\u2014' }),
+      el('td', { className: 'py-1.5 pr-4 font-mono text-slate-400', textContent: d.sequence || '\u2014' }),
+      el('td', { className: 'py-1.5 ' + confCls, textContent: d.confidence != null ? Math.round(d.confidence * 100) + '%' : '\u2014' }),
+    ]);
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+  body.appendChild(table);
+
+  // F2 raw texts
+  if (f2.raw_texts && f2.raw_texts.length > 0) {
+    body.appendChild(el('div', { className: 'mt-4 text-xs text-slate-500' }, [
+      el('span', { className: 'font-semibold', textContent: 'F2 raw output: ' }),
+      el('code', { className: 'ml-1 text-slate-400', textContent: f2.raw_texts.join(' | ') }),
+    ]));
+  }
+
+  // Bbox info
+  var bx = billet.bbox;
+  body.appendChild(el('div', {
+    className: 'mt-3 text-xs text-slate-600',
+    textContent: 'Bbox: (' + bx.x + ', ' + bx.y + ') ' + Math.round(bx.width) + 'x' + Math.round(bx.height) + 'px',
+  }));
+}
+
+function closeBilletModal() {
+  var modal = document.getElementById('billet-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeBilletModal();
+});
+
+// =========================================================================
+// Live upload
+// =========================================================================
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (e.dataTransfer.files.length > 0) setSelectedFile(e.dataTransfer.files[0]);
+}
+
+function handleFileSelect(e) {
+  if (e.target.files.length > 0) setSelectedFile(e.target.files[0]);
+}
+
+function setSelectedFile(file) {
+  selectedFile = file;
+  document.getElementById('selected-file').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+  document.getElementById('btn-infer').disabled = false;
+}
+
+async function runInference() {
+  if (!selectedFile) return;
+  var btn = document.getElementById('btn-infer');
+  var loading = document.getElementById('live-loading');
+  var results = document.getElementById('live-results');
+  btn.disabled = true;
+  loading.classList.remove('hidden');
+  results.classList.add('hidden');
+
+  var startTime = Date.now();
+  var timerEl = document.getElementById('live-timer');
+  var timerInterval = setInterval(function() {
+    timerEl.textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's elapsed';
+  }, 100);
+
+  try {
+    var formData = new FormData();
+    formData.append('file', selectedFile);
+    var res = await fetch('/api/infer', { method: 'POST', body: formData });
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return { detail: 'HTTP ' + res.status }; });
+      throw new Error(err.detail || 'HTTP ' + res.status);
+    }
+    var data = await res.json();
+    loading.classList.add('hidden');
+    results.classList.remove('hidden');
+    document.getElementById('live-meta').textContent =
+      data.num_billets + ' billets | ' + (data.elapsed_ms / 1000).toFixed(1) + 's | Detection: ' + ({roboflow_annotations: 'Roboflow Annotations', roboflow_api: 'Roboflow API', yolo_detector: 'YOLO Detector', edge_detection: 'Edge Detection'}[data.bbox_source] || data.bbox_source);
+    var annImg = document.getElementById('live-annotated');
+    annImg.classList.remove('loaded');
+    annImg.src = data.annotated_url;
+    renderBilletGrid(data.billets, 'live-billet-grid');
+  } catch (err) {
+    loading.classList.add('hidden');
+    console.error('Inference error:', err);
+    // Show detailed error in the results area instead of alert
+    results.classList.remove('hidden');
+    var errGrid = clearEl('live-billet-grid');
+    errGrid.appendChild(el('div', { className: 'col-span-full bg-red-900/30 border border-red-700 rounded-lg p-4' }, [
+      el('div', { className: 'font-bold text-red-400 mb-2', textContent: 'Inference Failed' }),
+      el('pre', { className: 'text-xs text-red-300 whitespace-pre-wrap break-all', textContent: err.message }),
+    ]));
+    document.getElementById('live-meta').textContent = 'Error after ' + ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+    document.getElementById('live-annotated').src = '';
+  } finally {
+    clearInterval(timerInterval);
+    btn.disabled = false;
+  }
+}
+
+// =========================================================================
+// Helpers
+// =========================================================================
+function confColor(conf) {
+  if (conf >= 0.80) return 'text-green-400';
+  if (conf >= 0.50) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function confBadgeClass(conf) {
+  if (conf >= 0.80) return 'bg-green-900/50 text-green-400 border border-green-800';
+  if (conf >= 0.50) return 'bg-yellow-900/50 text-yellow-400 border border-yellow-800';
+  return 'bg-red-900/50 text-red-400 border border-red-800';
+}
+
+function decisionBadgeClass(decision) {
+  switch (decision) {
+    case 'AGREE': return 'bg-green-900/50 text-green-400 border border-green-800';
+    case 'DISAGREE_PADDLE': return 'bg-yellow-900/50 text-yellow-400 border border-yellow-800';
+    case 'F2_ONLY': return 'bg-blue-900/50 text-blue-400 border border-blue-800';
+    case 'PADDLE_ONLY': return 'bg-purple-900/50 text-purple-400 border border-purple-800';
+    default: return 'bg-red-900/50 text-red-400 border border-red-800';
+  }
+}
+
+function decisionLabel(decision) {
+  switch (decision) {
+    case 'AGREE': return 'AGREE';
+    case 'DISAGREE_PADDLE': return 'DISAGR';
+    case 'F2_ONLY': return 'F2';
+    case 'PADDLE_ONLY': return 'PADDLE';
+    case 'NEITHER_VALID': return 'NEITHER';
+    default: return decision;
+  }
+}
+
+// =========================================================================
+// Boot
+// =========================================================================
+init();
+</script>
+</body>
+</html>

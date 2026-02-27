@@ -42,7 +42,21 @@ data/synthetic/
 
 # Pre-trained model files (downloaded at runtime)
 models/*.pb
+models/*.pt
 models/florence2_billet_lora/
+models/yolo_billet_detector/
+
+# YOLO base weights (downloaded at runtime)
+yolov8n.pt
+yolo26n.pt
+
+# Large data dirs (regenerable via scripts)
+data/yolo_dataset/
+data/training/
+data/inference_review/live/
+
+# Windows artifacts
+NUL
 
 # Claude Code
 .claude/

@@ -36,6 +36,9 @@ pytest-asyncio>=0.24.0
 # Dataset Management
 roboflow>=1.1.0
 
+# Object Detection (billet detector)
+ultralytics>=8.0.0
+
 # Fine-tuning (optional — needed for Florence-2 LoRA training)
 peft>=0.14.0
 accelerate>=1.0.0

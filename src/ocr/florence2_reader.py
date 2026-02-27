@@ -301,6 +301,24 @@ def _parse_florence2_output(
         if all_digits:
             heat_number = max(all_digits, key=len)
 
+    # Concatenated output splitting: Florence-2 often produces "612535383"
+    # where first 5 digits = heat, remaining = sequence.
+    if heat_number and len(heat_number) >= 8 and sequence is None:
+        sequence = heat_number[5:]
+        heat_number = heat_number[:5]
+        logger.debug(
+            f"[Florence-2] Split concatenated output: heat={heat_number} seq={sequence}"
+        )
+    elif heat_number and len(heat_number) in (6, 7) and sequence is None:
+        # 6-7 digits: suffix after position 5 might be partial sequence
+        suffix = heat_number[5:]
+        heat_number = heat_number[:5]
+        if suffix:
+            sequence = suffix
+            logger.debug(
+                f"[Florence-2] Split suffix: heat={heat_number} seq={sequence}"
+            )
+
     return heat_number, strand, sequence, raw_texts
 
 

@@ -6,6 +6,7 @@ structured OCRResult / BilletReading objects.
 """
 
 import os
+import re
 import warnings
 from pathlib import Path
 from typing import Optional, Union
@@ -339,13 +340,18 @@ def extract_billet_info(
         line2_text = " ".join(r.text for r in lines[1]).strip()
         logger.debug('Strand/sequence candidate: "{l}"', l=line2_text)
 
-        # Split on whitespace; first token → strand, remaining → sequence.
+        # Parse strand + sequence from line 2.
+        # Paint-stencil format: line 2 is a single 3-4 digit sequence (no strand).
+        # Dot-matrix format: line 2 is "[strand] [sequence]" with space.
         parts = line2_text.split()
-        if len(parts) >= 1:
+        if len(parts) == 1 and re.match(r"^\d{3,4}$", parts[0]):
+            # Paint-stencil: line 2 IS the full sequence (e.g., "5383")
+            sequence = parts[0].strip()
+        elif len(parts) >= 1:
             strand = parts[0].strip()
-        if len(parts) >= 2:
-            # Join remaining parts in case there are extra spaces.
-            sequence = "".join(parts[1:]).strip()
+            if len(parts) >= 2:
+                # Dot-matrix: join remaining parts as sequence
+                sequence = "".join(parts[1:]).strip()
 
     reading = BilletReading(
         heat_number=heat_number,
