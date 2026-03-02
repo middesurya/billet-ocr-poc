@@ -12,6 +12,17 @@ Steel billet stamps are hard to read because of:
 - Multiple billets per frame in surveillance camera views (~9 billets/frame)
 - Small text regions (~100-200px) in wide-angle shots
 
+## How It Works
+
+1. **YOLOv8** detects billet faces in the raw surveillance image → outputs bounding boxes
+2. **Crop** each billet using those bboxes (with padding)
+3. **Two OCR engines run on each crop in parallel:**
+   - **Florence-2** — tries 0° and 180° rotation, format validator extracts 5-digit heat (raw crop, no preprocessing)
+   - **PaddleOCR** — CLAHE preprocessing first, then reads line-by-line (heat on line 1, sequence on line 2)
+4. **Cross-validation** — compares both results, picks the best answer
+
+> **Note:** CLAHE preprocessing only applies to the PaddleOCR path. Florence-2 gets the raw crop directly — preprocessing actually hurts VLM accuracy.
+
 ## Architecture
 
 Florence-2 + PaddleOCR cross-validation ensemble with YOLOv8 detection and Claude Vision fallback:
