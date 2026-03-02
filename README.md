@@ -14,40 +14,50 @@ Steel billet stamps are hard to read because of:
 
 ## Architecture
 
-Florence-2 + PaddleOCR cross-validation ensemble with Claude Vision fallback:
+Florence-2 + PaddleOCR cross-validation ensemble with YOLOv8 detection and Claude Vision fallback:
 
 ```
 Surveillance Image (1280x640)
   |
   v
-Roboflow Bounding Boxes (per-billet isolation)
-  |
-  v
-+------ Bbox Crop + Padding ------+
-|                                  |
-v                                  v
-Florence-2 (0° + 180°)      PaddleOCR + CLAHE
-+ Format Validation          (angle classifier)
-|                                  |
-+---------> Cross-Validate <-------+
-                 |
-    Agree? ----> High confidence result (77% accuracy)
-    Disagree? -> Prefer PaddleOCR
-    Neither? --> Claude Vision Fallback
++---------- Billet Detection (3-tier) ----------+
+|  1. Roboflow annotations (known dataset)       |
+|  2. YOLOv8n detector (new images, 99.5% mAP)   |
+|  3. Edge detection (last resort fallback)       |
++---------------------+--------------------------+
+                      |
+             Per-billet bbox crops
+                      |
+        +-------------+-------------+
+        |                           |
+        v                           v
+  Florence-2 (0°+180°)     PaddleOCR + CLAHE
+  + Format Validation       (line-by-line read)
+  + Output Splitting        + Char Correction
+        |                           |
+        +---------> Cross-Validate <+
+                        |
+       Agree? --------> High confidence (pick best sequence)
+       Disagree? -----> Prefer PaddleOCR heat
+       F2 Only? ------> F2 heat + best sequence
+       Neither? ------> Claude Vision Fallback
 ```
 
 ### Why This Architecture?
-- **Florence-2 + PaddleOCR ensemble achieves 77.0% heat char accuracy** — exceeding either engine alone
+- **Florence-2 + PaddleOCR ensemble achieves 77.3% heat char accuracy** — exceeding either engine alone
+- **YOLOv8n billet detector (99.5% mAP@0.5)** — handles any new image without pre-computed annotations
 - Florence-2 and PaddleOCR fail on *different* images — cross-validation catches complementary failures
 - Multi-orientation (0°/180°) handles upside-down billets in surveillance feeds
 - Format validation extracts 5-digit heat numbers from noisy F2 output (+11% accuracy alone)
+- `_pick_best_sequence()` selects the longer sequence between engines (74.3% full 4-digit sequences)
 - Claude Vision serves as fallback only for genuinely hard cases
 
-## OCR Engines
+## OCR Engines & Detection
 
-| Engine | Type | Speed | Best Accuracy | Cost | Status |
-|--------|------|:-----:|:------------:|:----:|:------:|
-| **F2+Paddle Ensemble** | Local | **~1.7s** | **77.0%** char | Free | **Primary** |
+| Component | Type | Speed | Accuracy | Cost | Status |
+|-----------|------|:-----:|:--------:|:----:|:------:|
+| **F2+Paddle Ensemble** | Local | **~1.7s** | **77.3%** char | Free | **Primary OCR** |
+| **YOLOv8n Detector** | Local | ~50ms | 99.5% mAP | Free | **Primary Detection** |
 | **Florence-2 (0.23B)** | Local VLM | ~200ms | 69.9% char | Free | Ensemble component |
 | **PaddleOCR PP-OCRv5** | Local OCR | ~100ms | 65.2% char | Free | Ensemble component |
 | **Claude Vision** | Cloud VLM | ~3s | 66.7% char | ~$0.005/img | Fallback |
@@ -56,15 +66,24 @@ Previously evaluated but removed: EasyOCR, TrOCR, docTR, GOT-OCR-2.0 (all underp
 
 ## Benchmark Results
 
-### Latest: V10 Per-Billet (73 billets across 14 images, v9 1280x640)
+### Latest: V12 Per-Billet (73 billets across 14 images, v9 1280x640)
 
 | Method | Avg Heat Char Acc | Avg Heat Exact Match |
 |--------|:-:|:-:|
-| **F2+Paddle Ensemble** | **77.0%** | **68.5%** |
+| **F2+Paddle Ensemble (V11)** | **77.3%** | **68.5%** |
 | F2 Multi-Orient (0°+180°) | 69.9% | 60.3% |
 | PaddleOCR Bbox+CLAHE | 65.2% | 56.2% |
 | F2 Bbox Crop (format fix) | 60.8% | 52.1% |
 | F2 Bbox+SuperRes | 60.3% | 49.3% |
+
+### V12 Sequence Extraction Results (30 images, 280 billets)
+
+| Metric | Result |
+|--------|--------|
+| Heat numbers populated | 98.6% (276/280) |
+| Sequences populated | 95.7% (268/280) |
+| Full 4-digit sequences | 74.3% (199/268) |
+| AGREE decisions | 66.4% |
 
 ### Accuracy Improvement History
 
@@ -72,12 +91,15 @@ Previously evaluated but removed: EasyOCR, TrOCR, docTR, GOT-OCR-2.0 (all underp
 |---------|-------------|:------------:|------------|
 | V7 baseline | VLM Center Crop | 57.4% | Initial benchmarks |
 | V9 zero-shot | PaddleOCR+CLAHE | 65.2% | Higher-res dataset (1280x640) |
-| **V10 ensemble** | **F2+Paddle** | **77.0%** | **Format fix + multi-orient + cross-validation** |
+| V10 ensemble | F2+Paddle | 77.0% | Format fix + multi-orient + cross-validation |
+| V11 ensemble | F2+Paddle+CharCorr | 77.3% | PaddleOCR char confusion correction |
+| **V12** | **Full pipeline** | **77.3%** | **YOLO detector + sequence fix + best-sequence selection** |
 
 > **Key Insights:**
 > - **Post-processing > model improvements**: Format validator fix alone = +11.2% accuracy (more than any model change)
 > - **Complementary engines beat individual**: F2+PaddleOCR (77%) > PaddleOCR (65%) > F2 (61%) because they fail differently
 > - **Multi-orientation is critical**: 10% of billets are upside-down; 180° rotation adds +9% to F2 accuracy
+> - **Sequence selection matters**: PaddleOCR reads line-by-line (full 4-digit sequences), F2 concatenates and truncates
 
 Full reports in [`docs/`](docs/).
 
@@ -87,6 +109,7 @@ Each surveillance image contains ~9 billets. The V2 pipeline processes **all** b
 
 - Per-billet ground truth with `BilletGroundTruth` dataclass (bbox_index + coordinates)
 - `read_all_billets()` production API for NVIDIA Jetson deployment
+- Three-tier detection: Roboflow annotations → YOLOv8 → Edge detection
 - Exact bbox matching between GT and benchmark (no more bbox selection mismatch)
 - Crop images generated at `data/gt_review/` for human verification
 
@@ -131,26 +154,39 @@ billet-ocr-setup/
 |   |   |-- roi_detector.py        # Billet face ROI detection (4 strategies)
 |   |   |-- perspective.py         # Perspective correction
 |   |   |-- super_resolution.py    # ESPCN x4 super-resolution for tiny crops
+|   |   |-- yolo_detector.py       # YOLOv8n billet detector (singleton model)
 |   |-- ocr/
 |   |   |-- paddle_ocr.py          # PaddleOCR PP-OCRv5 integration
 |   |   |-- vlm_reader.py          # Claude Vision API reader
 |   |   |-- florence2_reader.py    # Florence-2 local VLM + multi-orientation
 |   |   |-- ensemble.py            # F2+PaddleOCR cross-validation + VLM fallback
+|   |   |-- inference.py           # Inference pipeline orchestrator
 |   |-- postprocess/
-|       |-- validator.py           # Format validation + character confusion map
-|       |-- format_validator.py    # Florence-2 output format extraction (5-digit heat)
-|       |-- char_replace.py        # Character replacement with confidence scoring
+|   |   |-- validator.py           # Format validation + character confusion map
+|   |   |-- format_validator.py    # Florence-2 output format extraction (5-digit heat)
+|   |   |-- char_replace.py        # Character replacement with confidence scoring
+|   |-- api/
+|       |-- main.py                # FastAPI server (serves frontend + REST API)
 |-- scripts/
 |   |-- benchmark.py               # Multi-engine accuracy benchmark suite
+|   |-- visual_inference.py        # Generate browse data for frontend (30 images)
 |   |-- extract_ground_truth.py    # VLM-powered ground truth extraction (V2 multi-billet)
 |   |-- download_roboflow_dataset.py  # Roboflow dataset downloader
 |   |-- parse_roboflow_annotations.py # COCO annotation parser
+|   |-- prepare_yolo_training.py   # COCO → YOLO format converter
+|   |-- train_yolo_detector.py     # YOLOv8 training (50 epochs, single-class)
+|   |-- test_yolo_inference.py     # End-to-end pipeline test on new images
+|-- frontend/
+|   |-- index.html                 # Browse + Live Upload UI
+|-- models/
+|   |-- yolo_billet_detector/      # Trained YOLO weights (best.pt, 6.3MB)
 |-- tests/                         # Unit tests
 |-- data/
 |   |-- raw/                       # Billet photos
 |   |-- raw_original/              # 5 high-res reference images
 |   |-- annotated/                 # Ground truth + bbox annotations
 |   |-- gt_review/                 # Per-billet crop images for human review
+|   |-- inference_review/          # Visual inference results (browse data)
 |-- docs/                          # Benchmark reports + research notes
 ```
 
@@ -191,6 +227,17 @@ ROBOFLOW_API_KEY=your-key-here    # Optional, for dataset download
 
 ## Usage
 
+### Start the Web UI
+
+```bash
+# Start API server (serves frontend at http://localhost:8001)
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8001
+
+# Open http://localhost:8001 in your browser
+# - Browse tab: pre-computed results for 30 images
+# - Live Upload tab: upload any billet image for instant OCR
+```
+
 ### Run the Benchmark
 
 ```bash
@@ -205,6 +252,29 @@ python scripts/benchmark.py --florence2 --bbox-crop --no-vlm --gt-v2 --max-image
 
 # Legacy per-image benchmark
 python scripts/benchmark.py --florence2 --bbox-crop --no-vlm
+```
+
+### Generate Browse Data
+
+```bash
+# Full 30-image inference (populates frontend Browse tab)
+python scripts/visual_inference.py --max-images 30 --seed 42
+
+# Quick smoke test (5 images)
+python scripts/visual_inference.py --max-images 5 --seed 42
+```
+
+### Train YOLO Detector
+
+```bash
+# Step 1: Convert COCO annotations to YOLO format
+python scripts/prepare_yolo_training.py
+
+# Step 2: Train YOLOv8n (50 epochs)
+python scripts/train_yolo_detector.py --epochs 50 --batch 4 --workers 0
+
+# Step 3: Test on images without pre-computed annotations
+python scripts/test_yolo_inference.py --max-images 5 --save-annotated
 ```
 
 ### Run Tests
@@ -241,6 +311,9 @@ Line 2: 5383          (4-digit sequence)
 5. **CLAHE helps PaddleOCR but hurts VLMs** on paint-stenciled text
 6. **Bounding box isolation** is critical for multi-billet surveillance frames
 7. **Data quality > model complexity** — fine-tuning on noisy VLM-generated labels caused catastrophic forgetting
+8. **PaddleOCR reads better sequences** — line-by-line detection gives full 4-digit sequences vs F2's truncated output
+9. **YOLO detector generalizes well** — 99.5% mAP@0.5 with only 1,424 training images, zero edge fallback needed
+10. **Simpson's Paradox in ensemble** — F2 has higher overall accuracy but PaddleOCR wins on the disagree subset
 
 ## Tech Stack
 
@@ -249,7 +322,9 @@ Line 2: 5383          (4-digit sequence)
 - **Florence-2** (HuggingFace transformers) for primary OCR
 - **Anthropic Claude API** (Sonnet 4.5) for VLM fallback
 - **PaddleOCR 3.x** (DBNet++ + SVTR) retained as secondary
+- **YOLOv8n** (Ultralytics) for billet detection
 - **Roboflow** for dataset management + bounding boxes
+- **FastAPI** for REST API + static frontend serving
 - **pytest** for testing
 - **loguru** for structured logging
 
