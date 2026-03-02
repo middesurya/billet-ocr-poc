@@ -1,0 +1,14 @@
+{
+  "data_dir": "data\\training\\florence2",
+  "output_dir": "models\\florence2_billet_lora_v2",
+  "epochs": 20,
+  "batch_size": 4,
+  "lr": 5e-05,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "device": "cuda",
+  "seed": 42,
+  "grad_accum_steps": 4,
+  "warmup_ratio": 0.1,
+  "model_id": "florence-community/Florence-2-base"
+}

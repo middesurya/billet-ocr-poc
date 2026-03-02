@@ -1,0 +1,14 @@
+{
+  "data_dir": "C:\\Users\\surya\\OneDrive\\Desktop\\work\\projects\\personal_proj\\billet-ocr-poc-setup\\billet-ocr-setup\\data\\training\\florence2",
+  "output_dir": "C:\\Users\\surya\\OneDrive\\Desktop\\work\\projects\\personal_proj\\billet-ocr-poc-setup\\billet-ocr-setup\\models\\florence2_billet_lora",
+  "epochs": 20,
+  "batch_size": 2,
+  "lr": 5e-05,
+  "lora_r": 8,
+  "lora_alpha": 32,
+  "device": "cuda",
+  "seed": 42,
+  "grad_accum_steps": 8,
+  "warmup_ratio": 0.15,
+  "model_id": "florence-community/Florence-2-base"
+}

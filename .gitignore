@@ -42,9 +42,6 @@ data/synthetic/
 
 # Pre-trained model files (downloaded at runtime)
 models/*.pb
-models/*.pt
-models/florence2_billet_lora/
-models/yolo_billet_detector/
 
 # YOLO base weights (downloaded at runtime)
 yolov8n.pt
